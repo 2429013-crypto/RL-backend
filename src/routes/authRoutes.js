@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 const User = require("../models/User");
 const Otp = require("../models/Otp");
 
@@ -16,7 +17,7 @@ router.post("/send-otp", async (req, res) => {
     const existingOtp = await Otp.findOne({ where: { email } });
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 3 * 60 * 1000);
     console.log("Generated OTP:", otp);
 
     if (existingOtp) {
@@ -31,6 +32,7 @@ router.post("/send-otp", async (req, res) => {
       existingOtp.otp = otp;
       existingOtp.expiresAt = expiresAt;
       existingOtp.isVerified = false;
+      existingOtp.verificationToken = null;
 
       await existingOtp.save();
 
@@ -44,6 +46,7 @@ router.post("/send-otp", async (req, res) => {
       otp,
       expiresAt,
       isVerified: false,
+      verificationToken: null,
     });
 
     console.log("Saved OTP:", otpData.toJSON());
@@ -91,6 +94,7 @@ router.post("/resend-otp", async (req, res) => {
     existingOtp.otp = otp;
     existingOtp.expiresAt = expiresAt;
     existingOtp.isVerified = false;
+    existingOtp.verificationToken = null;
 
     await existingOtp.save();
 
@@ -107,6 +111,7 @@ router.post("/resend-otp", async (req, res) => {
 });
 
 router.post("/verify-otp", async (req, res) => {
+  console.log("Verify OTP Request:", req.body);
   try {
     const { email, otp } = req.body;
 
@@ -120,7 +125,7 @@ router.post("/verify-otp", async (req, res) => {
       where: { email },
       order: [["updatedAt", "DESC"]],
     });
-
+    console.log("OTP Record:", otpRecord);
     if (!otpRecord) {
       return res.status(400).json({ message: "No OTP found" });
     }
@@ -137,11 +142,16 @@ router.post("/verify-otp", async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+
     otpRecord.isVerified = true;
+    otpRecord.verificationToken = verificationToken;
+
     await otpRecord.save();
 
     return res.status(200).json({
       message: "OTP verified successfully",
+      verificationToken,
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -150,42 +160,90 @@ router.post("/verify-otp", async (req, res) => {
 
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const {
+      email,
+      password,
+      phoneNumber,
+      state,
+      districtName,
+      pinCode,
+      verificationToken,
+    } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (
+      !email ||
+      !password ||
+      !phoneNumber ||
+      !state ||
+      !districtName ||
+      !pinCode ||
+      !verificationToken
+    ) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
     }
 
-    const otpRecord = await Otp.findOne({ where: { email } });
+    const otpRecord = await Otp.findOne({
+      where: {
+        email,
+        verificationToken,
+        isVerified: true,
+      },
+    });
 
-    if (!otpRecord || !otpRecord.isVerified) {
-      return res.status(400).json({ message: "OTP not verified" });
+    if (!otpRecord) {
+      return res.status(400).json({
+        message: "Invalid verification",
+      });
     }
 
-    const existingUser = await User.findOne({ where: { email } });
+    const tokenAge = Date.now() - new Date(otpRecord.updatedAt).getTime();
+
+    if (tokenAge > 10 * 60 * 1000) {
+      return res.status(400).json({
+        message: "Verification token expireds",
+      });
+    }
+
+    const existingUser = await User.findOne({
+      where: { email },
+    });
 
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({
+        message: "User already exists",
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const user = await User.create({
-      name,
       email,
       password: hashedPassword,
+      phoneNumber,
+      state,
+      districtName,
+      pinCode,
     });
+
+    await otpRecord.destroy();
 
     return res.status(201).json({
       message: "User registered successfully",
       user: {
         id: user.id,
-        name: user.name,
         email: user.email,
+        phoneNumber: user.phoneNumber,
+        state: user.state,
+        districtName: user.districtName,
+        pinCode: user.pinCode,
       },
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({
+      message: error.message,
+    });
   }
 });
-
 module.exports = router;

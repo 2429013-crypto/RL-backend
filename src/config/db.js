@@ -1,18 +1,21 @@
 const { Sequelize } = require("sequelize");
+const config = require("./config");
 
-const sequelize = new Sequelize(
-  "rldb",
-  "root",
-  "0000",
-  {
-    host: "localhost",
-    dialect: "mysql",
+const username = config.dbUsername || "root";
+const password = config.dbPassword || "0000";
+const host = config.dbHost || "localhost";
+const port = config.dbPort || 3306;
+const database = config.dbUrl || "rldb";
 
-    timezone: "+05:30",
+const sequelize = new Sequelize(database, username, password, {
+  host: host,
+  port: port,
+  dialect: "mysql",
 
-    logging: false,
-  }
-);
+  timezone: "+05:30",
+
+  logging: false,
+});
 
 sequelize
   .authenticate()

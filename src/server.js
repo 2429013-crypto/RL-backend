@@ -11,10 +11,9 @@ const authRoutes = require("./routes/authRoutes");
 const app = express();
 
 app.use(helmet());
-
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+   origin: "*",
     credentials: true,
   })
 );
@@ -33,9 +32,9 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
-    await sequelize.authenticate();
+    await sequelize.authenticate();                       
     console.log("Database connected successfully");
-
+ 
     await sequelize.sync();
 
     console.log("Tables synced successfully");
