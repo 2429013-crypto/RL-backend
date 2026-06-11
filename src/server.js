@@ -4,7 +4,8 @@ const cors = require("cors");
 const sequelize = require("./config/db");
 
 require("./models/Otp");
-require("./models/User");
+require("./models/User"); 
+console.log("AUTH ROUTES LOADED"); 
 
 const authRoutes = require("./routes/authRoutes");
 

@@ -6,7 +6,11 @@ const crypto = require("crypto");
 const User = require("../models/User");
 const Otp = require("../models/Otp");
 
-router.post("/send-otp", async (req, res) => {
+router.post("/send-otp", async (req, res) => { 
+    console.log("SEND OTP ROUTE HIT");
+  console.log(req.body);
+
+
   try {
     const { email } = req.body;
 
@@ -18,7 +22,7 @@ router.post("/send-otp", async (req, res) => {
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 3 * 60 * 1000);
-    console.log("Generated OTP:", otp);
+    console.log("Generated OTP:", otp); 
 
     if (existingOtp) {
       const timeDiff = Date.now() - new Date(existingOtp.updatedAt).getTime();
@@ -85,7 +89,7 @@ router.post("/resend-otp", async (req, res) => {
       return res.status(429).json({
         message: "Please wait 30 seconds before requesting OTP",
       });
-    }
+    } 
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -189,7 +193,7 @@ router.post("/register", async (req, res) => {
         email,
         verificationToken,
         isVerified: true,
-      },
+      }, 
     });
 
     if (!otpRecord) {
@@ -203,7 +207,7 @@ router.post("/register", async (req, res) => {
     if (tokenAge > 10 * 60 * 1000) {
       return res.status(400).json({
         message: "Verification token expireds",
-      });
+      }); 
     }
 
     const existingUser = await User.findOne({
@@ -245,5 +249,57 @@ router.post("/register", async (req, res) => {
       message: error.message,
     });
   }
-});
-module.exports = router;
+});                                                 
+router.post("/login", async (req, res) => { 
+  console.log("LOGIN ROUTE HIT"); 
+  console.log(req.body); 
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) { 
+      return res.status(400).json({
+        message: "Email and password are required",
+      }); 
+    }
+
+        const user = await User.findOne({ where: { email }, });
+
+   if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      }); 
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      user.password
+    );
+
+    if (!isPasswordCorrect) {
+      return res.status(401).json({
+        message: "Invalid password",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Login successful",
+      user: {
+        id: user.id,
+        email: user.email, 
+      //  name: user.name
+  //         phoneNumber: user.phoneNumber,
+  // state: user.state,
+  // districtName: user.districtName,
+  // pinCode: user.pinCode,
+
+        },                 
+    });   
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });                                              
+  }
+});          
+module.exports = router;   
+                                 
+                                              
