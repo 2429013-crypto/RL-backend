@@ -1,14 +1,16 @@
-const express = require("express");
+const express = require("express"); 
+const session = require("express-session"); 
 const helmet = require("helmet");
 const cors = require("cors");
-const sequelize = require("./config/db");
-
+const sequelize = require("./config/db"); 
 require("./models/Otp");
-require("./models/User"); 
+require("./models/User");         
+require("./models/profile"); 
 require("./models/Request");
 console.log("AUTH ROUTES LOADED"); 
 
-const authRoutes = require("./routes/authRoutes");
+const authRoutes = require("./routes/authRoutes"); 
+const profileRoutes = require("./routes/profileRoutes"); 
 const requestRoutes = require("./routes/requestRoutes");
 
 const app = express();
@@ -18,14 +20,13 @@ app.use(
   cors({
    origin: "*",
     credentials: true,
-  })
+  }) 
 );
-
-
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true })); 
 
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRoutes); 
+app.use("/api/profile",profileRoutes);
 app.use("/api/requests", requestRoutes);
 
 app.get("/", (req, res) => {
@@ -41,10 +42,10 @@ const startServer = async () => {
  
     await sequelize.sync({ alter: true });
 
-    console.log("Tables synced successfully");
+    console.log("Tables synced successfully");             
 
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`Server running on port ${PORT}`);                            
     });
   } catch (err) {
     console.error("Server startup error:", err);
