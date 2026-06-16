@@ -3,11 +3,12 @@ const sequelize = require("../config/db");
 
 const User = sequelize.define(
   "User",
-  {
+  {                              
+        // Registration fields
     email: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
+      unique: true,                       
     },
 
     password: {
@@ -15,10 +16,15 @@ const User = sequelize.define(
       allowNull: false,
     },
 
-    phoneNumber: {
+    phoneNumber: {                                                                       
+      type: DataTypes.STRING,               
+      allowNull: false, 
+    }, 
+        state: {
       type: DataTypes.STRING,
       allowNull: false,
     },
+
 
     districtName: {
       type: DataTypes.STRING,
@@ -28,8 +34,15 @@ const User = sequelize.define(
     pinCode: {
       type: DataTypes.STRING,
       allowNull: false,
-    },
+    },                            
+
+  profileCompleted: {
+  type: DataTypes.BOOLEAN,
+  defaultValue: false,
+},
   },
+   
+  // },
   {
     timestamps: true,
   },

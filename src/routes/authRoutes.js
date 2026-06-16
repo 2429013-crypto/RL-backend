@@ -244,7 +244,7 @@ router.post("/register", async (req, res) => {
         pinCode: user.pinCode,
       },
     });
-  } catch (error) {
+  } catch (error) {                                      
     return res.status(500).json({
       message: error.message,
     });
