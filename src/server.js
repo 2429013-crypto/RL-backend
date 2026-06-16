@@ -5,9 +5,11 @@ const sequelize = require("./config/db");
 
 require("./models/Otp");
 require("./models/User"); 
+require("./models/Request");
 console.log("AUTH ROUTES LOADED"); 
 
 const authRoutes = require("./routes/authRoutes");
+const requestRoutes = require("./routes/requestRoutes");
 
 const app = express();
 
@@ -24,6 +26,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/auth", authRoutes);
+app.use("/api/requests", requestRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json({ message: "Server Running 😊" });
@@ -36,7 +39,7 @@ const startServer = async () => {
     await sequelize.authenticate();                       
     console.log("Database connected successfully");
  
-    await sequelize.sync();
+    await sequelize.sync({ alter: true });
 
     console.log("Tables synced successfully");
 
