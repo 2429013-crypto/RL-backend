@@ -4,7 +4,8 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs"); // Added to handle file deletion on profile delete
 const Profile = require("../models/profile");
-const User = require("../models/User");
+const User = require("../models/user");
+const protect = require("../middleware/authMiddleware");
 // MULTER CONFIG 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -31,32 +32,37 @@ const upload = multer({
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
 });
 //  CREATE PROFILE 
-router.post("/create", upload.single("profilePhoto"), async (req, res) => {
+router.post(
+  "/create",
+  protect,
+  upload.single("profilePhoto"),
+  async (req, res) => {
  try {
     const {
-      userId,
-      fullName,
-      dateOfBirth,
-      gender,
-      bloodGroup,
-      occupation,
-      address,
-      city,
-      state,
-      pinCode,
-      weight,
-      medicalConditions,
-      currentMedications,
-      lastDonationDate,
-      receiveAlerts,
-      volunteerParticipation,
-    } = req.body;
+  fullName,
+  dateOfBirth,
+  gender,
+  bloodGroup,
+  occupation,
+  address,
+  city,
+  state,
+  pinCode,
+  weight,
+  medicalConditions,
+  currentMedications,
+  lastDonationDate,
+  receiveAlerts,
+  volunteerParticipation,
+} = req.body;
+
+const userId = req.session.userId;
   //  catch missing required fields early before any DB call
-    if (!userId || !fullName || !bloodGroup) {
-      return res.status(400).json({
-        message: "userId, fullName, and bloodGroup are required fields",
-      });
-    }
+    if (!fullName || !bloodGroup) {
+  return res.status(400).json({
+    message: "fullName and bloodGroup are required",
+  });
+}
 
     const profilePhoto = req.file ? req.file.filename : null;
 
@@ -111,7 +117,7 @@ router.post("/create", upload.single("profilePhoto"), async (req, res) => {
   }
 });
 //  GET PROFILE 
-router.get("/:userId", async (req, res) => {
+router.get("/:userId", protect, async (req, res) => {
   try {
     const profile = await Profile.findOne({
       where: { userId: req.params.userId },
@@ -132,7 +138,9 @@ router.get("/:userId", async (req, res) => {
   }
 });
 //  UPDATE PROFILE 
-router.put("/update/:userId", upload.single("profilePhoto"), async (req, res) => {
+router.put(
+  "/update/:userId",
+  protect, upload.single("profilePhoto"), async (req, res) => {
   try {
     const profile = await Profile.findOne({
       where: { userId: req.params.userId },
@@ -170,7 +178,9 @@ router.put("/update/:userId", upload.single("profilePhoto"), async (req, res) =>
 });
 
 //DELETE PROFILE 
-router.delete("/delete/:userId", async (req, res) => {
+router.delete(
+  "/delete/:userId",
+  protect, async (req, res) => {
   try {
     const profile = await Profile.findOne({
       where: { userId: req.params.userId },

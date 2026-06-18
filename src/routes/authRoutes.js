@@ -7,7 +7,7 @@ const {
   registerUser,
   loginUser,
   logoutUser,
-  getCurrentUser, // add this
+  getCurrentUser, 
 } = require("../controllers/authController");
 
 router.post("/send-otp", sendOtp);
@@ -16,6 +16,6 @@ router.post("/verify-otp", verifyOtp);
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);
-router.get("/me", getCurrentUser); // add this
+router.get("/me", getCurrentUser); 
 
 module.exports = router;

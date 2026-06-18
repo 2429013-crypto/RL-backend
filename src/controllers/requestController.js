@@ -142,9 +142,9 @@ const getAllRequests = async (req, res) => {
 
 const getMyRequests = async (req, res) => {
   try {
-    console.log("😊");
     
-    const userId = req.session.userId; // 👈 from session, not req.query
+    
+    const userId = req.session.userId; 
     console.log("userId:", req.session);
     
     const requests = await Request.findAll({
