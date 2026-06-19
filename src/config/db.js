@@ -12,9 +12,9 @@ const sequelize = new Sequelize(database, username, password, {
   port: port,
   dialect: "mysql",
 
-  timezone: "+05:30",
+  timezone: "+05:30",                                                             
 
-  logging: false,
+  logging: false,                                              
 });
 
 sequelize

@@ -1,6 +1,6 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/db");
-
+const sequelize = require("../config/db");  
+const ROLES = require("../constants/roles");
 const User = sequelize.define(
   "User",
   {
@@ -20,6 +20,11 @@ const User = sequelize.define(
       allowNull: false,
     },
 
+    state: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+
     districtName: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -29,10 +34,24 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-  },
+
+    profileCompleted: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },                                   
+    role: {
+  type: DataTypes.ENUM(
+    ROLES.USER,
+    ROLES.ADMIN
+  ),
+  allowNull: false,
+  defaultValue: ROLES.USER,
+},
+  }, 
+  // }, 
   {
     timestamps: true,
-  },
+  }
 );
 
-module.exports = User;
+module.exports = User; 

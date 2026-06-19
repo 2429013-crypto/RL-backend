@@ -1,29 +1,63 @@
+require("dotenv").config();
+
 const express = require("express");
+const session = require("express-session");
+const SequelizeStore = require("connect-session-sequelize")(session.Store);
 const helmet = require("helmet");
 const cors = require("cors");
 const sequelize = require("./config/db");
 
-require("./models/Otp");
-require("./models/User"); 
-console.log("AUTH ROUTES LOADED"); 
-
+require("./models/otp");
+require("./models/user");
+require("./models/profile");
+require("./models/request");
+console.log("AUTH ROUTES LOADED");
 const authRoutes = require("./routes/authRoutes");
+const profileRoutes = require("./routes/profileRoutes");
+const requestRoutes = require("./routes/requestRoutes");
 
 const app = express();
 
 app.use(helmet());
+
 app.use(
   cors({
-   origin: "*",
+    origin: process.env.FRONTEND_URL,
     credentials: true,
-  })
+  }),
 );
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ---- Session setup ----
+const sessionStore = new SequelizeStore({
+  db: sequelize,
+  tableName: "Sessions",
+  checkExpirationInterval: 15 * 60 * 1000,
+  expiration: 15 * 60 * 1000,
+});
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    store: sessionStore,
+    resave: false,
+    saveUninitialized: false,
+    rolling: true, 
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 15 * 60 * 1000,
+    },
+  }),
+);
+// ---- End session setup ----
+
 app.use("/api/auth", authRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/requests", requestRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json({ message: "Server Running 😊" });
@@ -33,12 +67,15 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
-    await sequelize.authenticate();                       
+    await sequelize.authenticate();
     console.log("Database connected successfully");
- 
-    await sequelize.sync();
-
+   // await sequelize.sync({ alter: true });                          
+   await sequelize.sync();                                      
+    // { alter: true }
     console.log("Tables synced successfully");
+
+    await sessionStore.sync();
+    console.log("Session store synced");
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
