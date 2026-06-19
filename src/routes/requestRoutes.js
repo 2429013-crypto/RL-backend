@@ -1,6 +1,8 @@
 ﻿const express = require("express");
 const router = express.Router();
-const protect = require("../middleware/authMiddleware");
+const protect = require("../middleware/authMiddleware");              
+const authorizeRole = require("../middleware/authorizeRole");
+const ROLES = require("../constants/roles");                                       
 const {
   createRequest,
   getAllRequests,
@@ -8,11 +10,10 @@ const {
   getRequestById,
   updateRequestStatus,
 } = require("../controllers/requestController");
-
 router.post("/", protect, createRequest);
 router.get("/", getAllRequests);
 router.get("/my-requests", getMyRequests);
 router.get("/:id", protect, getRequestById);
 router.patch("/:id/status", protect, updateRequestStatus);
+module.exports = router; 
 
-module.exports = router;

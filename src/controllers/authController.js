@@ -4,9 +4,10 @@ const Otp = require("../models/otp");
 const User = require("../models/user");
 const responseHandler = require("../../helper/responseHelper");
 
-const sendOtp = async (req, res) => {
-  try {
-    const { email } = req.body;
+const sendOtp = async (req, res) => { 
+  try { 
+    console.log("sendOtp route hit");
+ const { email } = req.body;
 
     if (!email) {
       return res.status(400).json({ message: "Email is required" });
@@ -67,7 +68,9 @@ const resendOtp = async (req, res) => {
         .json({ message: "Please wait 30 seconds before requesting OTP" });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); 
+    //generating the otp 
+    console.log("Generated OTP:", otp);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     existingOtp.otp = otp;

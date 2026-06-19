@@ -3,17 +3,19 @@ const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs"); // Added to handle file deletion on profile delete
-const Profile = require("../models/profile");
-const User = require("../models/user");
+const Profile = require("../models/profile");       
+const User = require("../models/user");  
+const authorizeRole = require("../middleware/authorizeRole");
+const ROLES = require("../constants/roles");                                              
 const protect = require("../middleware/authMiddleware");
 // MULTER CONFIG 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (req, file, cb) => { 
     cb(null, "uploads/");
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
-  },
+  }, 
 });
 //   only allow images, reject other file types
 const fileFilter = (req, file, cb) => {
@@ -39,32 +41,41 @@ router.post(
   async (req, res) => {
  try {
     const {
-  fullName,
-  dateOfBirth,
-  gender,
-  bloodGroup,
-  occupation,
-  address,
-  city,
-  state,
-  pinCode,
-  weight,
-  medicalConditions,
-  currentMedications,
-  lastDonationDate,
-  receiveAlerts,
-  volunteerParticipation,
-} = req.body;
+    fullName,
+      dateOfBirth,
+      gender,
+      bloodGroup,
+      occupation,
+      address,
+      city,
+      state,
+      pinCode,
+      weight,
+      medicalConditions,
+      currentMedications,
+      lastDonationDate,
+      receiveAlerts,
+      volunteerParticipation,
+    } = req.body;
+  
 
-const userId = req.session.userId;
-  //  catch missing required fields early before any DB call
-    if (!fullName || !bloodGroup) {
-  return res.status(400).json({
-    message: "fullName and bloodGroup are required",
+// Check if user is logged in
+// if (!req.session.user) {
+//   return res.status(401).json({
+//     message: "Please login first",
+//   });
+// }  
+
+// Get userId from session
+const userId = req.session.user.id;                                   
+
+// Validate fields
+if (!fullName || !bloodGroup) {
+  return res.status(400).json({ 
+    message: "Full name and blood group are required fields",
   });
-}
-
-    const profilePhoto = req.file ? req.file.filename : null;
+}                                                                                
+const profilePhoto = req.file ? req.file.filename : null;
 
     const existingProfile = await Profile.findOne({ where: { userId } });
     if (existingProfile) {
@@ -115,93 +126,160 @@ const userId = req.session.userId;
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
-});
-//  GET PROFILE 
-router.get("/:userId", protect, async (req, res) => {
-  try {
-    const profile = await Profile.findOne({
-      where: { userId: req.params.userId },
-    });
+}); 
+//protect GET PROFILE 
+router.get(
+  "/:userId",
+  authorizeRole(ROLES.USER, ROLES.ADMIN),
+  protect, async (req, res) => {
+    try {
 
-    if (!profile) {
-      return res.status(404).json({ message: "Profile not found" });
-    }
-  // Return full photo URL in GET response too, not just the filename
-    return res.status(200).json({
-      ...profile.toJSON(),
-      profilePhoto: profile.profilePhoto
-        ? `${req.protocol}://${req.get("host")}/uploads/${profile.profilePhoto}`
-        : null,
-    });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-});
-//  UPDATE PROFILE 
-router.put(
-  "/update/:userId",
-  protect, upload.single("profilePhoto"), async (req, res) => {
-  try {
-    const profile = await Profile.findOne({
-      where: { userId: req.params.userId },
-    });
-
-    if (!profile) {
-      return res.status(404).json({ message: "Profile not found" });
-    }
-  //If a new photo is uploaded, delete the OLD photo file from disk
-    //to prevent storage buildup over time
-    if (req.file) {
-      if (profile.profilePhoto) {
-        const oldPhotoPath = path.join("uploads", profile.profilePhoto);
-        if (fs.existsSync(oldPhotoPath)) {
-          fs.unlinkSync(oldPhotoPath);
-        }
+      if (
+        req.session.user.id != req.params.userId &&
+        req.session.user.role !== ROLES.ADMIN
+      ) {
+        return res.status(403).json({
+          message: "Not authorized",
+        });
       }
-      req.body.profilePhoto = req.file.filename; // attach new filename to update payload
-    }
 
-    await profile.update(req.body);
+      const profile = await Profile.findOne({
+        where: { userId: req.params.userId },
+      });
 
-    return res.status(200).json({
-      message: "Profile updated successfully",
-      profile: {
+      if (!profile) {
+        return res.status(404).json({
+          message: "Profile not found",
+        });
+      }
+
+      return res.status(200).json({
         ...profile.toJSON(),
         profilePhoto: profile.profilePhoto
           ? `${req.protocol}://${req.get("host")}/uploads/${profile.profilePhoto}`
           : null,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-});
+      });
 
-//DELETE PROFILE 
-router.delete(
-  "/delete/:userId",
-  protect, async (req, res) => {
-  try {
-    const profile = await Profile.findOne({
-      where: { userId: req.params.userId },
-    });
-
-    if (!profile) {
-      return res.status(404).json({ message: "Profile not found" });
+    } catch (error) {
+      return res.status(500).json({
+        message: error.message,                                                          
+      });
     }
- if (profile.profilePhoto) {
-      const photoPath = path.join("uploads", profile.profilePhoto);
-      if (fs.existsSync(photoPath)) {
-        fs.unlinkSync(photoPath);
+}); 
+//protect UPDATE PROFILE                                                                                        
+router.put(
+  "/update/:userId",
+  protect,
+  authorizeRole(ROLES.USER, ROLES.ADMIN),
+  upload.single("profilePhoto"),
+  async (req, res) => {
+    try {
+      if (req.session.user.id != req.params.userId) {
+  return res.status(403).json({
+    message: "Not authorized",
+  });
+}
+  const profile = await Profile.findOne({
+        where: { userId: req.params.userId },
+      });
+
+      if (!profile) {
+        return res.status(404).json({
+          message: "Profile not found",
+        });
       }
+
+      // If a new photo is uploaded, delete the old one
+      if (req.file) {
+
+        if (profile.profilePhoto) {
+          const oldPhotoPath = path.join(
+            "uploads",
+            profile.profilePhoto
+          );
+
+          if (fs.existsSync(oldPhotoPath)) {
+            fs.unlinkSync(oldPhotoPath);
+          }
+        }
+
+        req.body.profilePhoto = req.file.filename;
+      }
+
+      await profile.update(req.body);
+
+      return res.status(200).json({
+        message: "Profile updated successfully",
+        profile: {
+          ...profile.toJSON(),
+          profilePhoto: profile.profilePhoto
+            ? `${req.protocol}://${req.get("host")}/uploads/${profile.profilePhoto}`
+            : null,
+        },
+      });
+
+    } catch (error) {
+
+      return res.status(500).json({
+        message: error.message,
+      });
+
     }
-
-    await profile.destroy();
-
-    return res.status(200).json({ message: "Profile deleted successfully" });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
   }
-});
+); 
+//protect DELETE PROFILE 
+router.delete(
+  
+  "/delete/:userId",
+  authorizeRole(ROLES.USER, ROLES.ADMIN),
+ 
+  protect, async (req, res) => {
+    try {
+
+      if (
+        req.session.user.id != req.params.userId &&
+        req.session.user.role !== ROLES.ADMIN
+      ) {                                                             
+        return res.status(403).json({
+          message: "Not authorized",
+        });
+      }
+
+      const profile = await Profile.findOne({
+        where: { userId: req.params.userId },
+      });
+
+      if (!profile) {
+        return res.status(404).json({
+          message: "Profile not found",
+        });
+      }
+
+      if (profile.profilePhoto) {
+        const photoPath = path.join(
+          "uploads",
+          profile.profilePhoto
+        );
+
+        if (fs.existsSync(photoPath)) {
+          fs.unlinkSync(photoPath);
+        }
+      }
+
+      await profile.destroy();
+
+      return res.status(200).json({
+        message: "Profile deleted successfully",
+      });
+
+    } catch (error) {
+
+      return res.status(500).json({
+        message: error.message,
+      });
+
+    }
+  }
+);
 
 module.exports = router; 

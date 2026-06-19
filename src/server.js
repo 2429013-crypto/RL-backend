@@ -11,9 +11,7 @@ require("./models/otp");
 require("./models/user");
 require("./models/profile");
 require("./models/request");
-
 console.log("AUTH ROUTES LOADED");
-
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const requestRoutes = require("./routes/requestRoutes");
@@ -47,7 +45,7 @@ app.use(
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
-    rolling: true,
+    rolling: true, 
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -72,8 +70,8 @@ const startServer = async () => {
   try {
     await sequelize.authenticate();
     console.log("Database connected successfully");
-
-    await sequelize.sync();  
+   // await sequelize.sync({ alter: true });                          
+   await sequelize.sync();                                      
     // { alter: true }
     console.log("Tables synced successfully");
 
