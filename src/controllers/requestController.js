@@ -1,5 +1,5 @@
 const Request = require("../models/request");
-
+const ROLES = require("../constants/roles");
 const createRequest = async (req, res) => {
   try {
     const {
@@ -13,7 +13,8 @@ const createRequest = async (req, res) => {
       requiredBy,
     } = req.body;
 
-    const userId = req.session.userId; 
+    // const userId = req.session.userId;  
+    const userId = req.session.user.id;                                
 
     // Required Fields
     if (
@@ -144,7 +145,7 @@ const getMyRequests = async (req, res) => {
   try {
     console.log("😊");
     
-    const userId = req.session.userId; // 👈 from session, not req.query
+    const userId = req.session.user.Id; // 👈 from session, not req.query
     console.log("userId:", req.session);
     
     const requests = await Request.findAll({
@@ -174,11 +175,19 @@ const getRequestById = async (req, res) => {
       return res.status(404).json({
         message: "Blood request not found",
       });
-    }
-
+    }  
+    //protect part for the get request by id 
+    if ( 
+  request.userId != req.session.user.id &&
+  req.session.user.role !== ROLES.ADMIN
+) {
+  return res.status(403).json({
+    message: "Not authorized",
+  });
+}
     return res.status(200).json({
       success: true,
-      data: request,
+      data: request,                                    
     });
   } catch (error) {
     return res.status(500).json({
@@ -206,8 +215,16 @@ const updateRequestStatus = async (req, res) => {
       return res.status(404).json({
         message: "Blood request not found",
       });
-    }
-
+    }   
+  //protect updateRequestStatus              
+    if (
+  request.userId != req.session.user.id &&
+  req.session.user.role !== ROLES.ADMIN
+) {
+  return res.status(403).json({
+    message: "Not authorized",
+  }); 
+}   
     if (request.status === status) {
       return res.status(400).json({
         message: `Request is already ${status}`,
@@ -222,7 +239,7 @@ const updateRequestStatus = async (req, res) => {
       message: `Request marked as ${status}`,
       data: request,
     });
-  } catch (error) {
+  } catch (error) {      
     return res.status(500).json({
       message: error.message,
     });
