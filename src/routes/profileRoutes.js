@@ -129,9 +129,9 @@ const profilePhoto = req.file ? req.file.filename : null;
 }); 
 //protect GET PROFILE 
 router.get(
-  "/:userId",
+  "/:userId",protect,
   authorizeRole(ROLES.USER, ROLES.ADMIN),
-  protect, async (req, res) => {
+   async (req, res) => {
     try {
 
       if (
@@ -230,10 +230,10 @@ router.put(
 //protect DELETE PROFILE 
 router.delete(
   
-  "/delete/:userId",
+  "/delete/:userId",protect,
   authorizeRole(ROLES.USER, ROLES.ADMIN),
  
-  protect, async (req, res) => {
+   async (req, res) => {
     try {
 
       if (

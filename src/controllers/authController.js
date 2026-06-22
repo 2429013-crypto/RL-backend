@@ -13,26 +13,26 @@ const sendOtp = async (req, res) => {
       return res.status(400).json({ message: "Email is required" });
     }
 
-    const existingOtp = await Otp.findOne({ where: { email } });
+    // const existingOtp = await Otp.findOne({ where: { email } });
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 3 * 60 * 1000);
 
-    if (existingOtp) {
-      const timeDiff = Date.now() - new Date(existingOtp.updatedAt).getTime();
-      if (timeDiff < 30 * 1000) {
-        return res
-          .status(429)
-          .json({ message: "Please wait 30 seconds before requesting OTP" });
-      }
+    // if (existingOtp) {
+    //   const timeDiff = Date.now() - new Date(existingOtp.updatedAt).getTime();
+    //   if (timeDiff < 30 * 1000) {
+    //     return res
+    //       .status(429)
+    //       .json({ message: "Please wait 30 seconds before requesting OTP" });
+    //   }
 
-      existingOtp.otp = otp;
-      existingOtp.expiresAt = expiresAt;
-      existingOtp.isVerified = false;
-      existingOtp.verificationToken = null;
-      await existingOtp.save();
+    //   existingOtp.otp = otp;
+    //   existingOtp.expiresAt = expiresAt;
+    //   existingOtp.isVerified = false;
+    //   existingOtp.verificationToken = null;
+    //   await existingOtp.save();
 
-      return res.status(200).json({ message: "OTP sent successfully", otp });
-    }
+    //   return res.status(200).json({ message: "OTP sent successfully", otp });
+    // }
 
     await Otp.create({
       email,
@@ -42,7 +42,7 @@ const sendOtp = async (req, res) => {
       verificationToken: null,
     });
 
-    return res.status(200).json({ message: "OTP sent successfully" });
+    return res.status(200).json({ message: "OTP sent successfully",  otp});
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -218,9 +218,12 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid password" });
     }
 
-    req.session.userId = user.id;
     req.session.isLoggedIn = true;
-    req.session.role = user.role;
+req.session.user = {
+  id: user.id,
+  email: user.email,
+  role: user.role,
+};
 
     await new Promise((resolve, reject) => {
       req.session.save((err) => {
@@ -253,12 +256,7 @@ const logoutUser = (req, res) => {
 
 const getCurrentUser = async (req, res) => {
   try {
-
-    if (!req.session.isLoggedIn) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    const user = await User.findByPk(req.session.userId, {
+    const user = await User.findByPk(req.session.user.id, {
       attributes: [
         "id",
         "email",
@@ -266,6 +264,8 @@ const getCurrentUser = async (req, res) => {
         "state",
         "districtName",
         "pinCode",
+        "profileCompleted",
+        "role",
       ],
     });
 
