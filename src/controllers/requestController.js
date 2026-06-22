@@ -143,11 +143,8 @@ const getAllRequests = async (req, res) => {
 
 const getMyRequests = async (req, res) => {
   try {
-    console.log("😊");
-    
-    const userId = req.session.user.Id; // 👈 from session, not req.query
-    console.log("userId:", req.session);
-    
+    const userId = req.session.user.id;
+
     const requests = await Request.findAll({
       where: { userId },
       order: [["createdAt", "DESC"]],

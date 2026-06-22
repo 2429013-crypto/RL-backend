@@ -11,9 +11,9 @@ const {
   updateRequestStatus,
 } = require("../controllers/requestController");
 router.post("/", protect, createRequest);
-router.get("/", getAllRequests);
-router.get("/my-requests", protect, getMyRequests);
-router.get("/:id", getRequestById);
+router.get("/",protect, getAllRequests);
+router.get("/my-requests",protect, getMyRequests);
+router.get("/:id", protect, getRequestById);
 router.patch("/:id/status", protect, updateRequestStatus);
 module.exports = router; 
 

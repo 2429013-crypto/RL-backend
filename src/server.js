@@ -40,6 +40,7 @@ const sessionStore = new SequelizeStore({
 
 app.use(
   session({
+    name: "redlink_session",
     secret: process.env.SESSION_SECRET,
     store: sessionStore,
     resave: false,

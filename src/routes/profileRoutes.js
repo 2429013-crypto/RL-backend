@@ -4,9 +4,10 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs"); // Added to handle file deletion on profile delete
 const Profile = require("../models/profile");       
-const User = require("../models/User");  
+const User = require("../models/user");  
 const authorizeRole = require("../middleware/authorizeRole");
 const ROLES = require("../constants/roles");                                              
+const protect = require("../middleware/authMiddleware");
 // MULTER CONFIG 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => { 
@@ -33,7 +34,11 @@ const upload = multer({
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
 });
 //  CREATE PROFILE 
-router.post("/create", upload.single("profilePhoto"), async (req, res) => {
+router.post(
+  "/create",
+  protect,
+  upload.single("profilePhoto"),
+  async (req, res) => {
  try {
     const {
     fullName,
@@ -124,9 +129,9 @@ const profilePhoto = req.file ? req.file.filename : null;
 }); 
 //protect GET PROFILE 
 router.get(
-  "/:userId",
+  "/:userId",protect,
   authorizeRole(ROLES.USER, ROLES.ADMIN),
-  async (req, res) => {
+   async (req, res) => {
     try {
 
       if (
@@ -164,6 +169,7 @@ router.get(
 //protect UPDATE PROFILE                                                                                        
 router.put(
   "/update/:userId",
+  protect,
   authorizeRole(ROLES.USER, ROLES.ADMIN),
   upload.single("profilePhoto"),
   async (req, res) => {
@@ -223,9 +229,11 @@ router.put(
 ); 
 //protect DELETE PROFILE 
 router.delete(
-  "/delete/:userId",
+  
+  "/delete/:userId",protect,
   authorizeRole(ROLES.USER, ROLES.ADMIN),
-  async (req, res) => {
+ 
+   async (req, res) => {
     try {
 
       if (

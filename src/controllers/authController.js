@@ -2,7 +2,7 @@
 const bcrypt = require("bcrypt");
 const Otp = require("../models/otp");
 const User = require("../models/user");
-
+const responseHandler = require("../../helper/responseHelper");
 
 const sendOtp = async (req, res) => { 
   try { 
@@ -13,24 +13,26 @@ const sendOtp = async (req, res) => {
       return res.status(400).json({ message: "Email is required" });
     }
 
-    const existingOtp = await Otp.findOne({ where: { email } });
+    // const existingOtp = await Otp.findOne({ where: { email } });
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 3 * 60 * 1000);
 
-    if (existingOtp) {
-      const timeDiff = Date.now() - new Date(existingOtp.updatedAt).getTime();
-      if (timeDiff < 30 * 1000) {
-        return res.status(429).json({ message: "Please wait 30 seconds before requesting OTP" });
-      }
+    // if (existingOtp) {
+    //   const timeDiff = Date.now() - new Date(existingOtp.updatedAt).getTime();
+    //   if (timeDiff < 30 * 1000) {
+    //     return res
+    //       .status(429)
+    //       .json({ message: "Please wait 30 seconds before requesting OTP" });
+    //   }
 
-      existingOtp.otp = otp;
-      existingOtp.expiresAt = expiresAt;
-      existingOtp.isVerified = false;
-      existingOtp.verificationToken = null;
-      await existingOtp.save();
+    //   existingOtp.otp = otp;
+    //   existingOtp.expiresAt = expiresAt;
+    //   existingOtp.isVerified = false;
+    //   existingOtp.verificationToken = null;
+    //   await existingOtp.save();
 
-      return res.status(200).json({ message: "OTP sent successfully", otp });
-    }
+    //   return res.status(200).json({ message: "OTP sent successfully", otp });
+    // }
 
     await Otp.create({
       email,
@@ -40,7 +42,7 @@ const sendOtp = async (req, res) => {
       verificationToken: null,
     });
 
-    return res.status(200).json({ message: "OTP sent successfully" });
+    return res.status(200).json({ message: "OTP sent successfully",  otp});
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -61,7 +63,9 @@ const resendOtp = async (req, res) => {
 
     const timeDiff = Date.now() - new Date(existingOtp.updatedAt).getTime();
     if (timeDiff < 30 * 1000) {
-      return res.status(429).json({ message: "Please wait 30 seconds before requesting OTP" });
+      return res
+        .status(429)
+        .json({ message: "Please wait 30 seconds before requesting OTP" });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString(); 
@@ -116,7 +120,9 @@ const verifyOtp = async (req, res) => {
     otpRecord.verificationToken = verificationToken;
     await otpRecord.save();
 
-    return res.status(200).json({ message: "OTP verified successfully", verificationToken });
+    return res
+      .status(200)
+      .json({ message: "OTP verified successfully", verificationToken });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -197,7 +203,9 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
     }
 
     const user = await User.findOne({ where: { email } });
@@ -210,8 +218,19 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid password" });
     }
 
-    req.session.userId = user.id;
     req.session.isLoggedIn = true;
+req.session.user = {
+  id: user.id,
+  email: user.email,
+  role: user.role,
+};
+
+    await new Promise((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
 
     return res.status(200).json({
       message: "Login successful",
@@ -230,27 +249,34 @@ const logoutUser = (req, res) => {
     if (err) {
       return res.status(500).json({ message: "Logout failed" });
     }
-    res.clearCookie("connect.sid");
+    res.clearCookie("redlink_session");
     return res.status(200).json({ message: "Logged out successfully" });
   });
 };
+
 const getCurrentUser = async (req, res) => {
   try {
-    if (!req.session.isLoggedIn) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    const user = await User.findByPk(req.session.userId, {
-      attributes: ["id", "email", "phoneNumber", "state", "districtName", "pinCode"],
+    const user = await User.findByPk(req.session.user.id, {
+      attributes: [
+        "id",
+        "email",
+        "phoneNumber",
+        "state",
+        "districtName",
+        "pinCode",
+        "profileCompleted",
+        "role",
+      ],
     });
 
     if (!user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    return res.status(200).json({ user });
+    return responseHandler(res = res, status = 200, message = "User fetched successfully", data = user);
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    console.log("Error fetching current user:", error);
+    return responseHandler(res, 500, error.message, null, false);
   }
 };
 
@@ -261,5 +287,5 @@ module.exports = {
   registerUser,
   loginUser,
   logoutUser,
-  getCurrentUser, 
+  getCurrentUser,
 };
