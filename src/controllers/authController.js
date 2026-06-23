@@ -41,8 +41,9 @@ const sendOtp = async (req, res) => {
       isVerified: false,
       verificationToken: null,
     });
+    console.log("Generated OTP:", otp);
 
-    return res.status(200).json({ message: "OTP sent successfully",  otp});
+    return res.status(200).json({ message: "OTP sent successfully"});
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
