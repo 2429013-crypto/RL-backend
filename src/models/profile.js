@@ -4,11 +4,11 @@ const User = require("./User");
 
 const Profile = sequelize.define(
   "Profile",
-  { 
+  {
     userId: {
-  type: DataTypes.INTEGER,
-  allowNull: false,
-}, 
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
     fullName: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -76,7 +76,7 @@ const Profile = sequelize.define(
 
     lastDonationDate: {
       type: DataTypes.DATEONLY,
-      allowNull: true,                               
+      allowNull: true,
     },
 
     receiveAlerts: {
@@ -90,10 +90,10 @@ const Profile = sequelize.define(
     },
   },
   {
-    timestamps: true, 
-    tableName: "profile", 
-      freezeTableName: true,  
-  }
+    timestamps: true,
+    tableName: "profile",
+    freezeTableName: true,
+  },
 );
 
 // Associations
@@ -105,4 +105,4 @@ Profile.belongsTo(User, {
   foreignKey: "userId",
 });
 
-module.exports = Profile;   
+module.exports = Profile;
