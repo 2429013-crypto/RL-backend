@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const protect = require("../middleware/authMiddleware"); 
+const protect = require("../middleware/authMiddleware");
 const {
   sendOtp,
   resendOtp,
@@ -8,7 +8,7 @@ const {
   registerUser,
   loginUser,
   logoutUser,
-  getCurrentUser, 
+  getCurrentUser,
 } = require("../controllers/authController");
 
 router.post("/send-otp", sendOtp);

@@ -6,13 +6,13 @@ const Otp = sequelize.define(
   {
     email: {
       type: DataTypes.STRING,
-      allowNull: false,  
+      allowNull: false,
     },
 
     otp: {
       type: DataTypes.STRING(6),
       allowNull: false,
-    }, 
+    },
 
     expiresAt: {
       type: DataTypes.DATE,
@@ -27,7 +27,7 @@ const Otp = sequelize.define(
     verificationToken: {
       type: DataTypes.STRING,
       allowNull: true,
-    },                                    
+    },
   },
   {
     timestamps: true,
