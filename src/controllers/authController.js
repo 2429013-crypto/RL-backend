@@ -4,10 +4,10 @@ const Otp = require("../models/otp");
 const User = require("../models/user");
 const responseHandler = require("../../helper/responseHelper");
 
-const sendOtp = async (req, res) => { 
-  try { 
+const sendOtp = async (req, res) => {
+  try {
     console.log("sendOtp route hit");
- const { email } = req.body;
+    const { email } = req.body;
 
     if (!email) {
       return res.status(400).json({ message: "Email is required" });
@@ -43,7 +43,7 @@ const sendOtp = async (req, res) => {
     });
     console.log("Generated OTP:", otp);
 
-    return res.status(200).json({ message: "OTP sent successfully"});
+    return res.status(200).json({ message: "OTP sent successfully", otp });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -69,8 +69,8 @@ const resendOtp = async (req, res) => {
         .json({ message: "Please wait 30 seconds before requesting OTP" });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString(); 
-    //generating the otp 
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    //generating the otp
     console.log("Generated OTP:", otp);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
@@ -220,11 +220,12 @@ const loginUser = async (req, res) => {
     }
 
     req.session.isLoggedIn = true;
-req.session.user = {
-  id: user.id,
-  email: user.email,
-  role: user.role,
-};
+    req.session.user = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      isOnboarded: user.isOnboarded,
+    };
 
     await new Promise((resolve, reject) => {
       req.session.save((err) => {
@@ -238,6 +239,7 @@ req.session.user = {
       user: {
         id: user.id,
         email: user.email,
+        isOnboarded: user.isOnboarded,
       },
     });
   } catch (error) {
@@ -265,7 +267,7 @@ const getCurrentUser = async (req, res) => {
         "state",
         "districtName",
         "pinCode",
-        "profileCompleted",
+        "isOnboarded",
         "role",
       ],
     });
@@ -274,7 +276,12 @@ const getCurrentUser = async (req, res) => {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    return responseHandler(res = res, status = 200, message = "User fetched successfully", data = user);
+    return responseHandler(
+      (res = res),
+      (status = 200),
+      (message = "User fetched successfully"),
+      (data = user),
+    );
   } catch (error) {
     console.log("Error fetching current user:", error);
     return responseHandler(res, 500, error.message, null, false);

@@ -13,8 +13,8 @@ const createRequest = async (req, res) => {
       requiredBy,
     } = req.body;
 
-    // const userId = req.session.userId;  
-    const userId = req.session.user.id;                                
+    // const userId = req.session.userId;
+    const userId = req.session.user.id;
 
     // Required Fields
     if (
@@ -172,19 +172,19 @@ const getRequestById = async (req, res) => {
       return res.status(404).json({
         message: "Blood request not found",
       });
-    }  
-    //protect part for the get request by id 
-    if ( 
-  request.userId != req.session.user.id &&
-  req.session.user.role !== ROLES.ADMIN
-) {
-  return res.status(403).json({
-    message: "Not authorized",
-  });
-}
+    }
+    //protect part for the get request by id
+    if (
+      request.userId != req.session.user.id &&
+      req.session.user.role !== ROLES.ADMIN
+    ) {
+      return res.status(403).json({
+        message: "Not authorized",
+      });
+    }
     return res.status(200).json({
       success: true,
-      data: request,                                    
+      data: request,
     });
   } catch (error) {
     return res.status(500).json({
@@ -202,7 +202,8 @@ const updateRequestStatus = async (req, res) => {
 
     if (!status || !validStatuses.includes(status)) {
       return res.status(400).json({
-        message: "Invalid status value. Must be Active, Fulfilled, or Cancelled",
+        message:
+          "Invalid status value. Must be Active, Fulfilled, or Cancelled",
       });
     }
 
@@ -212,16 +213,16 @@ const updateRequestStatus = async (req, res) => {
       return res.status(404).json({
         message: "Blood request not found",
       });
-    }   
-  //protect updateRequestStatus              
+    }
+    //protect updateRequestStatus
     if (
-  request.userId != req.session.user.id &&
-  req.session.user.role !== ROLES.ADMIN
-) {
-  return res.status(403).json({
-    message: "Not authorized",
-  }); 
-}   
+      request.userId != req.session.user.id &&
+      req.session.user.role !== ROLES.ADMIN
+    ) {
+      return res.status(403).json({
+        message: "Not authorized",
+      });
+    }
     if (request.status === status) {
       return res.status(400).json({
         message: `Request is already ${status}`,
@@ -236,7 +237,7 @@ const updateRequestStatus = async (req, res) => {
       message: `Request marked as ${status}`,
       data: request,
     });
-  } catch (error) {      
+  } catch (error) {
     return res.status(500).json({
       message: error.message,
     });
