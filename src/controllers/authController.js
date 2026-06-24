@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const Otp = require("../models/otp");
 const User = require("../models/user");
 const responseHandler = require("../../helper/responseHelper");
+const sendEmail = require("../../helper/mailHandler");
 
 const sendOtp = async (req, res) => {
   try {
@@ -41,6 +42,19 @@ const sendOtp = async (req, res) => {
       isVerified: false,
       verificationToken: null,
     });
+
+    const sent = await sendEmail(
+      email,
+      "OTP Verification",
+      `Your OTP is ${otp}`,
+    );
+
+    if (!sent) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send OTP",
+      });
+    }
 
     return res.status(200).json({ message: "OTP sent successfully", otp });
   } catch (error) {
