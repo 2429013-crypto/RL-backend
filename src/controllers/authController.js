@@ -4,6 +4,9 @@ const Otp = require("../models/otp");
 const User = require("../models/user");
 const responseHandler = require("../../helper/responseHelper");
 const sendEmail = require("../../helper/mailHandler");
+const { otpTemplate } = require("../../templates/otpTemplate");
+const { verifiedTemplate } = require("../../templates/verifiedTemplate");
+const { welcomeTemplate } = require("../../templates/welcomeTemplate");
 
 const sendOtp = async (req, res) => {
   try {
@@ -43,11 +46,9 @@ const sendOtp = async (req, res) => {
       verificationToken: null,
     });
 
-    const sent = await sendEmail(
-      email,
-      "OTP Verification",
-      `Your OTP is ${otp}`,
-    );
+    const emailHtml = otpTemplate(otp);
+
+    const sent = await sendEmail(email, "OTP Verification", emailHtml);
 
     if (!sent) {
       return res.status(500).json({
@@ -56,7 +57,7 @@ const sendOtp = async (req, res) => {
       });
     }
 
-    return res.status(200).json({ message: "OTP sent successfully", otp });
+    return res.status(200).json({ message: "OTP sent successfully" });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -83,8 +84,6 @@ const resendOtp = async (req, res) => {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    //generating the otp
-    console.log("Generated OTP:", otp);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     existingOtp.otp = otp;
@@ -92,6 +91,17 @@ const resendOtp = async (req, res) => {
     existingOtp.isVerified = false;
     existingOtp.verificationToken = null;
     await existingOtp.save();
+
+    const emailHtml = otpTemplate(otp);
+
+    const sent = await sendEmail(email, "OTP Verification", emailHtml);
+
+    if (!sent) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to resend OTP",
+      });
+    }
 
     return res.status(200).json({ message: "OTP resent successfully" });
   } catch (error) {
@@ -133,6 +143,9 @@ const verifyOtp = async (req, res) => {
     otpRecord.isVerified = true;
     otpRecord.verificationToken = verificationToken;
     await otpRecord.save();
+
+    const emailHtml = verifiedTemplate();
+    await sendEmail(email, "Email Verified", emailHtml);
 
     return res
       .status(200)
@@ -193,6 +206,11 @@ const registerUser = async (req, res) => {
       districtName,
       pinCode,
     });
+
+    const emailHtml = welcomeTemplate(user.email);
+await sendEmail(user.email, "Welcome to RedLink 🩸", emailHtml);
+
+
 
     await otpRecord.destroy();
 

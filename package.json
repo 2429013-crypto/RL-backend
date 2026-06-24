@@ -14,7 +14,7 @@
   "type": "commonjs",
   "dependencies": {
     "bcrypt": "^6.0.0",
-    "connect-session-sequelize": "^6.1.1",
+    "connect-session-sequelize": "^8.0.6",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
