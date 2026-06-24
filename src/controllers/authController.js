@@ -45,6 +45,7 @@ const sendOtp = async (req, res) => {
       isVerified: false,
       verificationToken: null,
     });
+    console.log("Generated OTP:", otp);
 
     const emailHtml = otpTemplate(otp);
 
