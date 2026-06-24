@@ -1,0 +1,185 @@
+<!-- EMAIL WRAPPER -->
+
+<div
+  style="
+    font-family: Arial, sans-serif;
+    max-width: 540px;
+    margin: 0 auto;
+    background: #f3f4f6;
+    padding: 32px 16px;
+  "
+>
+  <!-- HEADER — Brand identity -->
+  <div
+    style="
+      background: #fef2f2;
+      padding: 28px 24px;
+      text-align: center;
+      border-radius: 12px 12px 0 0;
+    "
+  >
+    <!-- Logo -->
+    <div style="font-size: 26px; font-weight: 700; letter-spacing: 1px">
+      🩸 <span style="color: #dc2626">RED</span
+      ><span style="color: #111827">LINK</span>
+    </div>
+
+    <!-- Tagline -->
+    <div
+      style="
+        color: #1f2937;
+        font-size: 12px;
+        margin-top: 4px;
+        letter-spacing: 2px;
+      "
+    >
+      BLOOD DONOR NETWORK
+    </div>
+  </div>
+  <!-- END HEADER -->
+
+  <!-- ACCENT BAR — Visual separator -->
+
+  <div style="background: red; height: 1px"></div>
+
+  <!-- BODY — Main email content -->
+
+  <div style="background: white; padding: 36px 32px">
+    <!-- Title -->
+
+    <div
+      style="
+        font-size: 22px;
+        font-weight: 500;
+        color: #111827;
+        margin-bottom: 8px;
+      "
+    >
+      Verify your email
+    </div>
+
+    <!-- Title underline -->
+    <div
+      style="
+        width: 40px;
+        height: 3px;
+        background: #dc2626;
+        border-radius: 2px;
+        margin-bottom: 20px;
+      "
+    ></div>
+
+    <!-- Welcome message -->
+    <div
+      style="
+        color: #4b5563;
+        font-size: 14px;
+        line-height: 1.7;
+        margin-bottom: 24px;
+      "
+    >
+      Hello, thank you for registering with
+      <strong>
+        <span style="color: #dc2626; font-weight: 700">RED</span
+        ><span style="color: #111827; font-weight: 700">LINK</span> </strong
+      >. Use the verification code below to complete your registration and start
+      saving lives.
+    </div>
+
+    <!-- OTP BOX Verification code -->
+    <div
+      style="
+        background: #fef2f2;
+        border-left: 4px solid #dc2626;
+        border-radius: 8px;
+        padding: 24px;
+        text-align: center;
+        margin-bottom: 24px;
+      "
+    >
+      <!-- OTP label -->
+
+      <div
+        style="
+          font-size: 12px;
+          color: #9ca3af;
+          letter-spacing: 2px;
+          margin-bottom: 12px;
+        "
+      >
+        YOUR VERIFICATION CODE
+      </div>
+
+      <!-- OTP digit boxes  dynamically generated from otp  -->
+      <table align="center" role="presentation" cellspacing="6" cellpadding="0" style="margin: 0 auto">
+  <tr>
+    {{OTP_DIGIT_BOXES}}
+  </tr>
+</table>
+    </div>
+    <!-- END OTP BOX -->
+
+    <!-- EXPIRY WARNING -->
+    <div
+      style="
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 24px;
+      "
+    >
+      <div style="font-size: 13px; color: #9a3412">
+        ⏱ This code expires in <strong>3 minutes</strong>. Do not share it with
+        anyone.
+      </div>
+    </div>
+    <!-- END EXPIRY WARNING -->
+
+    <!-- SECURITY NOTE -->
+    <div style="background: #f9fafb; border-radius: 8px; padding: 12px 16px">
+      <div style="font-size: 12px; color: #6b7280; line-height: 1.6">
+        🔒 If you didn't create an account with REDLINK, please ignore this
+        email. Your account security is our priority.
+      </div>
+    </div>
+    <!-- END SECURITY NOTE -->
+  </div>
+  <!-- END BODY -->
+
+  <!-- FOOTER — Company info -->
+
+  <div
+    style="
+      background: #dc2626;
+      padding: 20px 24px;
+      text-align: center;
+      border-radius: 0 0 12px 12px;
+    "
+  >
+    <!-- Company name -->
+
+    <div
+      style="
+        font-size: 14px;
+        font-weight: 500;
+        color: white;
+        margin-bottom: 4px;
+      "
+    >
+      REDLINK — Blood Donor Network
+    </div>
+
+    <!-- Tagline -->
+    <div style="font-size: 11px; color: white; margin-bottom: 8px">
+      Connecting donors with those in need
+    </div>
+
+    <!-- Copyright -->
+    <div style="font-size: 11px; color: white; margin-top: 8px">
+      © {{YEAR}} REDLINK. This is an automated email — please do not reply.
+    </div>
+  </div>
+  <!-- END FOOTER -->
+</div>
+<!-- END EMAIL WRAPPER -->
