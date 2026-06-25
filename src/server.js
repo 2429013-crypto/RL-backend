@@ -11,7 +11,7 @@ require("./models/otp");
 require("./models/user");
 require("./models/profile");
 require("./models/request");
-console.log("AUTH ROUTES LOADED");
+
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const requestRoutes = require("./routes/requestRoutes");
