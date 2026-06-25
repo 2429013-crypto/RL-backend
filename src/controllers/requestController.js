@@ -196,6 +196,13 @@ const createRequest = async (req, res) => {
 const getAllRequests = async (req, res) => {
   try {
     const requests = await Request.findAll({
+      include: [
+        {
+          model: RequestAcceptance,
+          as: "acceptances",
+          attributes: ["donorId"],
+        },
+      ],
       order: [["createdAt", "DESC"]],
     });
 
@@ -217,6 +224,13 @@ const getMyRequests = async (req, res) => {
 
     const requests = await Request.findAll({
       where: { userId },
+      include: [
+        {
+          model: RequestAcceptance,
+          as: "acceptances",
+          attributes: ["donorId"],
+        },
+      ],
       order: [["createdAt", "DESC"]],
     });
 
@@ -325,8 +339,8 @@ const acceptRequest = async (req, res) => {
     if (request.userId == req.user.id)
       return res.status(403).json({ message: "You cannot accept your own request" });
 
-    // Must be Active
-    if (request.status !== "Active")
+    // Must be Active or Accepted
+    if (request.status !== "Active" && request.status !== "Accepted")
       return res.status(400).json({ message: "This request is no longer active" });
 
     // Fetch profile to get blood group
@@ -428,6 +442,40 @@ const findMatchingDonors = async (bloodGroup) => {
 
   return matchingProfiles;
 };
+const cancelAcceptance = async (req, res) => {
+  try {
+    const request = await Request.findByPk(req.params.id);
+    if (!request)
+      return res.status(404).json({ message: "Blood request not found" });
+
+    const acceptance = await RequestAcceptance.findOne({
+      where: { requestId: request.id, donorId: req.user.id },
+    });
+
+    if (!acceptance) {
+      return res.status(400).json({ message: "You have not accepted this request" });
+    }
+
+    await acceptance.destroy();
+
+    request.acceptanceCount = Math.max(0, request.acceptanceCount - 1);
+
+    if (request.acceptanceCount === 0 && request.status === "Accepted") {
+      request.status = "Active";
+    }
+
+    await request.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Donation acceptance cancelled successfully",
+      data: request,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createRequest,
   getAllRequests,
@@ -437,4 +485,5 @@ module.exports = {
   acceptRequest,      // add
   getAcceptedDonors,  //  add
   findMatchingDonors, //  add
+  cancelAcceptance,
 }; 
