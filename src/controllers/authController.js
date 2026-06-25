@@ -1,4 +1,4 @@
-﻿const crypto = require("crypto");
+const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const Otp = require("../models/otp");
 const User = require("../models/user");
@@ -286,17 +286,171 @@ const getCurrentUser = async (req, res) => {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
+    const userData = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      isOnboarded: user.isOnboarded,
+    };
+
     return res.status(200).json({
       success: true,
-      data: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        isOnboarded: user.isOnboarded,
-      },
+      data: userData,
+      user: userData,
     });
   } catch (error) {
     console.log("Error fetching current user:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// ── FORGOT PASSWORD ──────────────────────────────────────────────────────────
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found with this email" });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 min expiry
+    console.log("otp", otp);
+
+    const existingOtp = await Otp.findOne({ where: { email } });
+    if (existingOtp) {
+      existingOtp.otp = otp;
+      existingOtp.expiresAt = expiresAt;
+      existingOtp.isVerified = false;
+      existingOtp.verificationToken = null;
+      await existingOtp.save();
+    } else {
+      await Otp.create({
+        email,
+        otp,
+        expiresAt,
+        isVerified: false,
+        verificationToken: null,
+      });
+    }
+
+    const emailHtml = otpTemplate(otp);
+    const sent = await sendEmail(email, "Password Reset OTP - RedLink", emailHtml);
+    console.log("sent", sent);
+    console.log("email", email);
+
+    if (!sent) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send password reset email",
+      });
+    }
+
+    return res.status(200).json({ success: true, message: "Password reset OTP sent successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// ── VERIFY RESET OTP ──────────────────────────────────────────────────────────
+const verifyResetOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const otpRecord = await Otp.findOne({
+      where: { email },
+      order: [["createdAt", "DESC"]],
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({ message: "No OTP found" });
+    }
+
+    if (new Date() > otpRecord.expiresAt) {
+      return res.status(400).json({ message: "OTP expired. Please request a new one." });
+    }
+
+    if (otpRecord.otp !== String(otp)) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+
+    otpRecord.isVerified = true;
+    otpRecord.verificationToken = verificationToken;
+    await otpRecord.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "OTP verified successfully",
+      verificationToken,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// ── RESET PASSWORD ────────────────────────────────────────────────────────────
+const resetPassword = async (req, res) => {
+  try {
+    const { email, verificationToken, newPassword } = req.body;
+
+    if (!email || !verificationToken || !newPassword) {
+      return res.status(400).json({
+        message: "Email, verification token, and new password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters",
+      });
+    }
+
+    if (!/^[a-zA-Z0-9]+$/.test(newPassword)) {
+      return res.status(400).json({
+        message: "Password can only contain letters and numbers",
+      });
+    }
+
+    const otpRecord = await Otp.findOne({
+      where: { email, verificationToken, isVerified: true },
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({ message: "Invalid or expired token. Please start over." });
+    }
+
+    const tokenAge = Date.now() - new Date(otpRecord.updatedAt).getTime();
+    if (tokenAge > 10 * 60 * 1000) {
+      return res.status(400).json({ message: "Token expired. Please start over." });
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    await otpRecord.destroy();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset successfully",
+    });
+  } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 };
@@ -309,4 +463,7 @@ module.exports = {
   loginUser,
   logoutUser,
   getCurrentUser,
+  forgotPassword,
+  verifyResetOtp,
+  resetPassword,
 }; 
