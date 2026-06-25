@@ -6,11 +6,11 @@ const responseHandler = require("../../helper/responseHelper");
 
 const sendOtp = async (req, res) => {
   try {
-    console.log("sendOtp route hit");
+    console.log("sendOtp route hit"); 
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+      return res.status(400).json({ message: "Email is required" });     
     }
 
     // const existingOtp = await Otp.findOne({ where: { email } });
@@ -132,26 +132,16 @@ const verifyOtp = async (req, res) => {
 const registerUser = async (req, res) => {
   try {
     const {
-      email,
-      password,
-      phoneNumber,
-      state,
-      districtName,
-      pinCode,
-      verificationToken,
-    } = req.body;
+  email,
+  password,
+  verificationToken,
+} = req.body; 
 
-    if (
-      !email ||
-      !password ||
-      !phoneNumber ||
-      !state ||
-      !districtName ||
-      !pinCode ||
-      !verificationToken
-    ) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
+  if (!email || !password || !verificationToken) {
+  return res.status(400).json({
+    message: "Email, password and verification token are required",
+  });
+}   
 
     const otpRecord = await Otp.findOne({
       where: { email, verificationToken, isVerified: true },
@@ -172,27 +162,18 @@ const registerUser = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({
-      email,
-      password: hashedPassword,
-      phoneNumber,
-      state,
-      districtName,
-      pinCode,
-    });
-
-    await otpRecord.destroy();
+   const user = await User.create({
+  email,
+  password: hashedPassword,
+  }); 
+  await otpRecord.destroy();
 
     return res.status(201).json({
       message: "User registered successfully",
       user: {
         id: user.id,
         email: user.email,
-        phoneNumber: user.phoneNumber,
-        state: user.state,
-        districtName: user.districtName,
-        pinCode: user.pinCode,
-      },
+    },                        
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -259,30 +240,34 @@ const logoutUser = (req, res) => {
 
 const getCurrentUser = async (req, res) => {
   try {
-    const user = await User.findByPk(req.session.user.id, {
+    const user = await User.findByPk(req.user.id, {
       attributes: [
         "id",
         "email",
-        "phoneNumber",
-        "state",
-        "districtName",
-        "pinCode",
         "isOnboarded",
-        "role",
+        "role",                 
       ],
     });
 
     if (!user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-
-    return responseHandler(
-      (res = res),
-      (status = 200),
-      (message = "User fetched successfully"),
-      (data = user),
-    );
-  } catch (error) {
+ // return responseHandler(
+    //   (res = res),
+    //   (status = 200),
+    //   (message = "User fetched successfully"),
+    //   (data = user),
+    // ); 
+    return res.status(200).json({
+  success: true,
+  user: {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    isOnboarded: user.isOnboarded,
+  },
+});       
+} catch (error) {
     console.log("Error fetching current user:", error);
     return responseHandler(res, 500, error.message, null, false);
   }
@@ -296,4 +281,4 @@ module.exports = {
   loginUser,
   logoutUser,
   getCurrentUser,
-};
+}; 

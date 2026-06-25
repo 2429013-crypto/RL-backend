@@ -1,11 +1,14 @@
-const Request = require("../models/request");
-const ROLES = require("../constants/roles");
-const createRequest = async (req, res) => {
+const Request = require("../models/request"); 
+const RequestAcceptance = require("../models/RequestAcceptance"); //added 
+const User = require("../models/user");   //added 
+const ROLES = require("../constants/roles"); 
+const MAX_DONORS = 10;                                                                                                             
+const createRequest = async (req, res) => {  
   try {
     const {
       patientName,
       bloodGroup,
-      unitsNeeded,
+      unitsNeeded, 
       hospitalName,
       contactNumber,
       location,
@@ -14,11 +17,11 @@ const createRequest = async (req, res) => {
     } = req.body;
 
     // const userId = req.session.userId;
-    const userId = req.session.user.id;
+    const userId = req.user.id;                               
 
     // Required Fields
     if (
-      !patientName ||
+      !patientName || 
       !bloodGroup ||
       !unitsNeeded ||
       !hospitalName ||
@@ -109,19 +112,21 @@ const createRequest = async (req, res) => {
       priority,
       requiredBy,
       userId,
-    });
-
-    return res.status(201).json({
+    }); 
+        // Find matching donors for email (your friend uses this)
+    const matchingProfiles = await findMatchingDonors(bloodGroup);
+  return res.status(201).json({
       success: true,
       message: "Blood request created successfully",
-      requestId: request.id,
-    });
+      requestId: request.id,           
+      matchingDonorsCount: matchingProfiles.length,
+  });
   } catch (error) {
     return res.status(500).json({
       message: error.message,
     });
   }
-};
+};                          
 
 const getAllRequests = async (req, res) => {
   try {
@@ -143,7 +148,7 @@ const getAllRequests = async (req, res) => {
 
 const getMyRequests = async (req, res) => {
   try {
-    const userId = req.session.user.id;
+    const userId = req.user.id;    
 
     const requests = await Request.findAll({
       where: { userId },
@@ -164,10 +169,9 @@ const getMyRequests = async (req, res) => {
 
 const getRequestById = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const request = await Request.findByPk(id);
-
+  // const { id } = req.params;
+  //const request = await Request.findByPk(id);              
+      const request = await Request.findByPk(req.params.id);
     if (!request) {
       return res.status(404).json({
         message: "Blood request not found",
@@ -175,8 +179,8 @@ const getRequestById = async (req, res) => {
     }
     //protect part for the get request by id
     if (
-      request.userId != req.session.user.id &&
-      req.session.user.role !== ROLES.ADMIN
+      request.userId != req.user.id &&
+      req.user.role !== ROLES.ADMIN
     ) {
       return res.status(403).json({
         message: "Not authorized",
@@ -205,25 +209,28 @@ const updateRequestStatus = async (req, res) => {
         message:
           "Invalid status value. Must be Active, Fulfilled, or Cancelled",
       });
-    }
-
+    }                      
     const request = await Request.findByPk(id);
 
     if (!request) {
       return res.status(404).json({
         message: "Blood request not found",
       });
-    }
-    //protect updateRequestStatus
-    if (
-      request.userId != req.session.user.id &&
-      req.session.user.role !== ROLES.ADMIN
+    } 
+    //protect updateRequestStatus 
+        // Owner or admin only      
+   if (
+      request.userId != req.user.id &&
+      req.user.role !== ROLES.ADMIN
     ) {
       return res.status(403).json({
         message: "Not authorized",
       });
-    }
-    if (request.status === status) {
+    }          
+        // Only admin can reopen 
+            if (status === "Active" && request.status !== "Active" && req.user.role !== ROLES.ADMIN)
+      return res.status(403).json({ message: "Only admin can reopen a request" });
+ if (request.status === status) {
       return res.status(400).json({
         message: `Request is already ${status}`,
       });
@@ -242,12 +249,127 @@ const updateRequestStatus = async (req, res) => {
       message: error.message,
     });
   }
-};
+}; 
+const acceptRequest = async (req, res) => {
+  try {
+    const request = await Request.findByPk(req.params.id);
+    if (!request)
+      return res.status(404).json({ message: "Blood request not found" });
 
+    // Cannot accept own request
+    if (request.userId == req.user.id)
+      return res.status(403).json({ message: "You cannot accept your own request" });
+
+    // Must be Active
+    if (request.status !== "Active")
+      return res.status(400).json({ message: "This request is no longer active" });
+
+    // Fetch profile to get blood group
+    const Profile = require("../models/profile");
+    const userProfile = await Profile.findOne({ where: { userId: req.user.id } });
+
+    if (!userProfile)
+      return res.status(400).json({ message: "Please complete your profile first" });
+
+    if (!userProfile.bloodGroup)
+      return res.status(400).json({ message: "Please add your blood group to your profile" });
+
+    // Blood group must match
+    if (userProfile.bloodGroup !== request.bloodGroup)
+      return res.status(403).json({
+        message: `This request needs ${request.bloodGroup}. Your blood group is ${userProfile.bloodGroup}`,
+      });
+
+    // Already accepted by this user
+    const alreadyAccepted = await RequestAcceptance.findOne({
+      where: { requestId: request.id, donorId: req.user.id },
+    });
+    if (alreadyAccepted)
+      return res.status(400).json({ message: "You have already accepted this request" });
+
+    // Max donors check
+    if (request.acceptanceCount >= MAX_DONORS)
+      return res.status(400).json({ message: `This request already has ${MAX_DONORS} donors` });
+
+    const serialNumber = request.acceptanceCount + 1;
+
+    await RequestAcceptance.create({
+      requestId: request.id,
+      donorId: req.user.id,
+      serialNumber,
+    }); 
+  request.acceptanceCount = serialNumber;
+    if (request.status === "Active") request.status = "Accepted";
+    await request.save(); 
+
+    return res.status(200).json({
+      success: true,
+      message: `You are donor #${serialNumber} for this request.`,
+      serialNumber,
+      data: request,
+    }); 
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};  
+const getAcceptedDonors = async (req, res) => {
+  try {
+    const request = await Request.findByPk(req.params.id);
+
+    if (!request)
+      return res.status(404).json({ message: "Blood request not found" });
+
+    // Only owner or admin can see donors list
+    if (request.userId != req.user.id && req.user.role !== ROLES.ADMIN)
+      return res.status(403).json({ message: "Not authorized" });
+
+    const acceptances = await RequestAcceptance.findAll({
+      where: { requestId: request.id },
+      order: [["serialNumber", "ASC"]],
+      include: [
+        {
+          model: User,
+          as: "donor",
+        attributes: ["id", "email", "phoneNumber"], 
+        },
+      ],                    
+    });                    
+
+    return res.status(200).json({
+      success: true,
+      totalDonors: acceptances.length,
+      remainingSlots: MAX_DONORS - acceptances.length,
+      data: acceptances,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+const findMatchingDonors = async (bloodGroup) => {
+  const Profile = require("../models/profile");
+
+  const matchingProfiles = await Profile.findAll({
+    where: {
+      bloodGroup,
+      receiveAlerts: true, // only users who opted in to alerts
+    },
+    include: [
+      {
+        model: User,
+        attributes: ["id", "email"],
+      }, 
+    ],
+  });
+
+  return matchingProfiles;
+};
 module.exports = {
   createRequest,
   getAllRequests,
   getMyRequests,
   getRequestById,
   updateRequestStatus,
-};
+  acceptRequest,      // add
+  getAcceptedDonors,  //  add
+  findMatchingDonors, //  add
+}; 

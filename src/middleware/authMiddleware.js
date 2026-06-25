@@ -4,8 +4,8 @@ const protect = (req, res, next) => {
     return res.status(401).json({
       message: "Access denied. Please login first.",
     });
-  }
-  next();
-};
-
-module.exports = protect;
+  } 
+    req.user = req.session.user; // added                 
+    next();
+};                                                    
+module.exports = protect;               

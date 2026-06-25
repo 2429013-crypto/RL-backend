@@ -45,15 +45,19 @@ const Request = sequelize.define(
     },
 
     status: {
-      type: DataTypes.ENUM("Active", "Fulfilled", "Cancelled"),
+      type: DataTypes.ENUM("Active", "Fulfilled", "Cancelled","Accepted"), //added accepted 
       defaultValue: "Active",
-    },
+    }, 
 
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+    }, 
+         acceptanceCount: {
+       type: DataTypes.INTEGER,
+      defaultValue: 0, // 👈 added
     },
-  },
+       },
   {
     timestamps: true,
   },

@@ -131,8 +131,9 @@ router.get(
   authorizeRole(ROLES.USER, ROLES.ADMIN),
   async (req, res) => {
     try {
+      const targetUserId = req.params.userId === "me" ? req.session.user.id : req.params.userId;
       if (
-        req.session.user.id != req.params.userId &&
+        req.session.user.id != targetUserId &&
         req.session.user.role !== ROLES.ADMIN
       ) {
         return res.status(403).json({
@@ -141,7 +142,7 @@ router.get(
       }
 
       const profile = await Profile.findOne({
-        where: { userId: req.params.userId },
+        where: { userId: targetUserId },
       });
 
       if (!profile) {
@@ -171,13 +172,14 @@ router.put(
   upload.single("profilePhoto"),
   async (req, res) => {
     try {
-      if (req.session.user.id != req.params.userId) {
+      const targetUserId = req.params.userId === "me" ? req.session.user.id : req.params.userId;
+      if (req.session.user.id != targetUserId) {
         return res.status(403).json({
           message: "Not authorized",
         });
       }
       const profile = await Profile.findOne({
-        where: { userId: req.params.userId },
+        where: { userId: targetUserId },
       });
 
       if (!profile) {
@@ -225,8 +227,9 @@ router.delete(
 
   async (req, res) => {
     try {
+      const targetUserId = req.params.userId === "me" ? req.session.user.id : req.params.userId;
       if (
-        req.session.user.id != req.params.userId &&
+        req.session.user.id != targetUserId &&
         req.session.user.role !== ROLES.ADMIN
       ) {
         return res.status(403).json({
@@ -235,7 +238,7 @@ router.delete(
       }
 
       const profile = await Profile.findOne({
-        where: { userId: req.params.userId },
+        where: { userId: targetUserId },
       });
 
       if (!profile) {
