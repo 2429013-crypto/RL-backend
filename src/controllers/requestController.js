@@ -1,7 +1,14 @@
+const { Op } = require("sequelize");
 const Request = require("../models/request"); 
+const User = require("../models/User");
+const Profile = require("../models/profile");
 const RequestAcceptance = require("../models/RequestAcceptance"); //added 
-const User = require("../models/user");   //added 
 const ROLES = require("../constants/roles"); 
+const { bloodRequestTemplate } = require("../../templates/bloodRequestTemplate");
+const mailHandler = require("../../helper/mailHandler");
+
+
+const APP_URL = process.env.APP_URL || "http://localhost:5173";
 const MAX_DONORS = 10;                                                                                                             
 const createRequest = async (req, res) => {  
   try {
@@ -101,6 +108,7 @@ const createRequest = async (req, res) => {
       });
     }
 
+    
     // Save Request
     const request = await Request.create({
       patientName,
@@ -113,6 +121,63 @@ const createRequest = async (req, res) => {
       requiredBy,
       userId,
     }); 
+    console.log("[DEBUG] Request created, starting donor search for:", bloodGroup); // ADD 
+
+    // 🩸 Notify matching donors
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+    Profile.findAll({
+      where: {
+        bloodGroup,
+        receiveAlerts: true,
+        [Op.or]: [
+          { lastDonationDate: null },
+          { lastDonationDate: { [Op.lt]: threeMonthsAgo } },
+        ],
+      },
+      include: [
+        {
+          model: User,
+          where: {
+            id: { [Op.ne]: userId },
+          },
+          attributes: ["id", "email"],
+        },
+      ],
+      attributes: ["userId", "fullName", "bloodGroup"],
+    })
+      .then((profiles) => {
+          console.log("[DEBUG] profiles found:", profiles.length); // add 
+  console.log("[DEBUG] bloodGroup searched:", bloodGroup); // add
+  
+  if (profiles.length === 0) {
+    console.log("[RedLink] No matching donors found");
+    return;
+  }
+  console.log(`[RedLink] Sending email to ${profiles.length} donor(s)`);
+  profiles.forEach((p) => {
+    const html = bloodRequestTemplate({
+      donorName: p.fullName || "Donor",
+      bloodGroup,
+      patientName,
+      hospitalName,
+      location,
+      unitsNeeded,
+      requiredBy,
+      priority,
+      contactNumber,
+      requestId: request.id,
+      appUrl: APP_URL,
+    });
+    mailHandler(
+      p.User.email,
+      `🩸 Urgent ${bloodGroup} Blood Needed — ${hospitalName}`,
+      html
+    );
+  });
+})
+.catch((err) => console.error("[RedLink] Donor alert email error:", err));
         // Find matching donors for email (your friend uses this)
     const matchingProfiles = await findMatchingDonors(bloodGroup);
   return res.status(201).json({
