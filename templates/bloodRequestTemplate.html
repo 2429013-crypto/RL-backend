@@ -1,0 +1,277 @@
+<!-- EMAIL WRAPPER -->
+<div
+  style="
+    font-family: Arial, sans-serif;
+    max-width: 540px;
+    width: 100%;
+    margin: 0 auto;
+    background: #f3f4f6;
+    padding: 32px 16px;
+    box-sizing: border-box;
+  "
+>
+  <!-- HEADER -->
+  <div
+    style="
+      background: #fef2f2;
+      padding: 28px 24px;
+      text-align: center;
+      border-radius: 12px 12px 0 0;
+    "
+  >
+    <div style="font-size: 26px; font-weight: 700; letter-spacing: 1px">
+      🩸 <span style="color: #dc2626">RED</span
+      ><span style="color: #111827">LINK</span>
+    </div>
+    <div
+      style="
+        color: #1f2937;
+        font-size: 12px;
+        margin-top: 4px;
+        letter-spacing: 2px;
+      "
+    >
+      BLOOD DONOR NETWORK
+    </div>
+  </div>
+
+  <!-- ACCENT BAR -->
+  <div style="background: #dc2626; height: 1px"></div>
+
+  <!-- BODY -->
+  <div style="background: white; padding: 36px 24px">
+    <!-- Title -->
+    <div
+      style="
+        font-size: 22px;
+        font-weight: 500;
+        color: #111827;
+        margin-bottom: 8px;
+      "
+    >
+      Urgent Blood Request
+    </div>
+    <div
+      style="
+        width: 40px;
+        height: 3px;
+        background: #dc2626;
+        border-radius: 2px;
+        margin-bottom: 20px;
+      "
+    ></div>
+
+    <!-- Greeting -->
+    <div
+      style="
+        color: #4b5563;
+        font-size: 14px;
+        line-height: 1.7;
+        margin-bottom: 24px;
+      "
+    >
+      Hi <strong>{{DONOR_NAME}}</strong>, someone near you needs
+      <strong><span style="color: #dc2626">{{BLOOD_GROUP}}</span></strong>
+      blood urgently. Please review the details below and contact them if you
+      can help.
+    </div>
+
+    <!-- PRIORITY BADGE -->
+    <div style="margin-bottom: 20px">{{PRIORITY_BADGE}}</div>
+
+    <!-- REQUEST DETAILS BOX -->
+    <div
+      style="
+        background: #fef2f2;
+        border-left: 4px solid #dc2626;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 24px;
+      "
+    >
+      <div
+        style="
+          font-size: 12px;
+          color: #9ca3af;
+          letter-spacing: 2px;
+          margin-bottom: 16px;
+        "
+      >
+        REQUEST DETAILS
+      </div>
+
+      <table
+        width="100%"
+        cellpadding="0"
+        cellspacing="0"
+        style="border-collapse: collapse"
+      >
+        <tr>
+          <td
+            style="padding: 6px 0; font-size: 13px; color: #6b7280; width: 45%"
+          >
+            Patient Name
+          </td>
+          <td
+            style="
+              padding: 6px 0;
+              font-size: 13px;
+              color: #111827;
+              font-weight: 600;
+            "
+          >
+            {{PATIENT_NAME}}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; font-size: 13px; color: #6b7280">
+            Blood Group
+          </td>
+          <td
+            style="
+              padding: 6px 0;
+              font-size: 13px;
+              color: #dc2626;
+              font-weight: 700;
+            "
+          >
+            {{BLOOD_GROUP}}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; font-size: 13px; color: #6b7280">
+            Units Needed
+          </td>
+          <td
+            style="
+              padding: 6px 0;
+              font-size: 13px;
+              color: #111827;
+              font-weight: 600;
+            "
+          >
+            {{UNITS_NEEDED}} unit(s)
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; font-size: 13px; color: #6b7280">
+            Hospital
+          </td>
+          <td
+            style="
+              padding: 6px 0;
+              font-size: 13px;
+              color: #111827;
+              font-weight: 600;
+            "
+          >
+            {{HOSPITAL_NAME}}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; font-size: 13px; color: #6b7280">
+            Location
+          </td>
+          <td
+            style="
+              padding: 6px 0;
+              font-size: 13px;
+              color: #111827;
+              font-weight: 600;
+            "
+          >
+            {{LOCATION}}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; font-size: 13px; color: #6b7280">
+            Required By
+          </td>
+          <td
+            style="
+              padding: 6px 0;
+              font-size: 13px;
+              color: #111827;
+              font-weight: 600;
+            "
+          >
+            {{REQUIRED_BY}}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; font-size: 13px; color: #6b7280">
+            Contact
+          </td>
+          <td
+            style="
+              padding: 6px 0;
+              font-size: 13px;
+              color: #111827;
+              font-weight: 600;
+            "
+          >
+            {{CONTACT_NUMBER}}
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- CTA BUTTON -->
+    <div style="text-align: center; margin-bottom: 24px">
+      <a
+        href="{{APP_URL}}/request/{{REQUEST_ID}}"
+        target="_blank"
+        style="
+          display: inline-block;
+          background-color: #dc2626;
+          color: #ffffff;
+          font-family: Arial, sans-serif;
+          font-size: 14px;
+          font-weight: 700;
+          text-decoration: none;
+          padding: 12px 32px;
+          border-radius: 8px;
+          letter-spacing: 0.5px;
+        "
+      >
+        🩸 View Request
+      </a>
+    </div>
+
+    <!-- ALERT NOTE -->
+    <div style="background: #f9fafb; border-radius: 8px; padding: 12px 16px">
+      <div style="font-size: 12px; color: #6b7280; line-height: 1.6">
+        🔔 You are receiving this because your blood group matches and you have
+        alerts enabled. You can turn off alerts anytime from your profile
+        settings.
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div
+    style="
+      background: #dc2626;
+      padding: 20px 24px;
+      text-align: center;
+      border-radius: 0 0 12px 12px;
+    "
+  >
+    <div
+      style="
+        font-size: 14px;
+        font-weight: 500;
+        color: white;
+        margin-bottom: 4px;
+      "
+    >
+      REDLINK — Blood Donor Network
+    </div>
+    <div style="font-size: 11px; color: white; margin-bottom: 8px">
+      Connecting donors with those in need
+    </div>
+    <div style="font-size: 11px; color: white; margin-top: 8px">
+      © {{YEAR}} REDLINK. This is an automated email — please do not reply.
+    </div>
+  </div>
+</div>
