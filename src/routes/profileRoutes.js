@@ -107,6 +107,8 @@ router.post(
           volunteerParticipation === "true" || volunteerParticipation === true,
       });
 
+      if (req.body.phoneNumber) user.phoneNumber = req.body.phoneNumber;
+      if (req.body.districtName) user.districtName = req.body.districtName;
       user.isOnboarded = true;
       await user.save();
       //  Return full profilePhoto URL so frontend can directly use it
@@ -143,6 +145,12 @@ router.get(
 
       const profile = await Profile.findOne({
         where: { userId: targetUserId },
+        include: [
+          {
+            model: User,
+            attributes: ["phoneNumber", "districtName", "email"],
+          },
+        ],
       });
 
       if (!profile) {
@@ -201,14 +209,33 @@ router.put(
         req.body.profilePhoto = req.file.filename;
       }
 
+      if (req.body.phoneNumber || req.body.districtName) {
+        const user = await User.findByPk(targetUserId);
+        if (user) {
+          if (req.body.phoneNumber !== undefined) user.phoneNumber = req.body.phoneNumber;
+          if (req.body.districtName !== undefined) user.districtName = req.body.districtName;
+          await user.save();
+        }
+      }
+
       await profile.update(req.body);
+
+      const updatedProfile = await Profile.findOne({
+        where: { userId: targetUserId },
+        include: [
+          {
+            model: User,
+            attributes: ["phoneNumber", "districtName", "email"],
+          },
+        ],
+      });
 
       return res.status(200).json({
         message: "Profile updated successfully",
         profile: {
-          ...profile.toJSON(),
-          profilePhoto: profile.profilePhoto
-            ? `${req.protocol}://${req.get("host")}/uploads/${profile.profilePhoto}`
+          ...updatedProfile.toJSON(),
+          profilePhoto: updatedProfile.profilePhoto
+            ? `${req.protocol}://${req.get("host")}/uploads/${updatedProfile.profilePhoto}`
             : null,
         },
       });
