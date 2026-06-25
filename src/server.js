@@ -1,16 +1,16 @@
 require("dotenv").config();
-
 const express = require("express");
 const session = require("express-session");
 const SequelizeStore = require("connect-session-sequelize")(session.Store);
-const helmet = require("helmet");
 const cors = require("cors");
+const path = require("path");
 const sequelize = require("./config/db");
 
-require("./models/otp");
+require("./models/otp");        
 require("./models/user");
 require("./models/profile");
 require("./models/request");
+require("./models/RequestAcceptance");
 
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
@@ -18,19 +18,19 @@ const requestRoutes = require("./routes/requestRoutes");
 
 const app = express();
 
-app.use(helmet());
-
 app.use(
   cors({
     origin: process.env.FRONTEND_URL,
     credentials: true,
-  }),
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
 );
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-// ---- Session setup ----
 const sessionStore = new SequelizeStore({
   db: sequelize,
   tableName: "Sessions",
@@ -52,9 +52,8 @@ app.use(
       sameSite: "lax",
       maxAge: 15 * 60 * 1000,
     },
-  }),
+  })
 );
-// ---- End session setup ----
 
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
@@ -70,13 +69,24 @@ const startServer = async () => {
   try {
     await sequelize.authenticate();
     console.log("Database connected successfully");
-   // await sequelize.sync({ alter: true });
+
+    const User = require("./models/user");
+    const Request = require("./models/request");
+    const RequestAcceptance = require("./models/RequestAcceptance");
+
+    Request.hasMany(RequestAcceptance, { foreignKey: "requestId", as: "acceptances" });
+    RequestAcceptance.belongsTo(Request, { foreignKey: "requestId" });
+    User.hasMany(RequestAcceptance, { foreignKey: "donorId", as: "acceptances" });
+    RequestAcceptance.belongsTo(User, { foreignKey: "donorId", as: "donor" });
+
+    // Use default sync (without alter: true) to avoid MySQL index accumulation bug on nodemon restart.
+    // If you need to alter the schema, use migrations or run sync({ alter: true }) once.
     await sequelize.sync();
-    // { alter: true }
+    // await sequelize.sync({ alter: true }); 
     console.log("Tables synced successfully");
 
     await sessionStore.sync();
-    console.log("Session store synced");
+    console.log("Session store synced");                  
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
@@ -93,4 +103,4 @@ process.on("SIGINT", async () => {
   console.log("Shutting down server...");
   await sequelize.close();
   process.exit(0);
-});
+}); 

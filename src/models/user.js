@@ -4,7 +4,7 @@ const ROLES = require("../constants/roles");
 const User = sequelize.define(
   "User",
   {
-    email: {
+    email: {          
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
@@ -17,28 +17,28 @@ const User = sequelize.define(
 
     phoneNumber: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
 
     state: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
 
     districtName: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
 
     pinCode: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
+      type: DataTypes.STRING,  
+      allowNull: true,
+    },  
 
     isOnboarded: {
-      type: DataTypes.BOOLEAN,
+      type: DataTypes.BOOLEAN, 
       defaultValue: false,
-    },
+    },       
     role: {
       type: DataTypes.ENUM(ROLES.USER, ROLES.ADMIN),
       allowNull: false,
@@ -51,4 +51,4 @@ const User = sequelize.define(
   },
 );
 
-module.exports = User;
+module.exports = User; 

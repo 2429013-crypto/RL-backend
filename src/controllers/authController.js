@@ -8,6 +8,7 @@ const { otpTemplate } = require("../../templates/otpTemplate");
 const { verifiedTemplate } = require("../../templates/verifiedTemplate");
 const { welcomeTemplate } = require("../../templates/welcomeTemplate");
 
+// ── SEND OTP ──────────────────────────────────────────────────────────────────
 const sendOtp = async (req, res) => {
   try {
     console.log("sendOtp route hit");
@@ -17,38 +18,30 @@ const sendOtp = async (req, res) => {
       return res.status(400).json({ message: "Email is required" });
     }
 
-    // const existingOtp = await Otp.findOne({ where: { email } });
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 3 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 3 * 60 * 1000); // 3 min expiry
 
-    // if (existingOtp) {
-    //   const timeDiff = Date.now() - new Date(existingOtp.updatedAt).getTime();
-    //   if (timeDiff < 30 * 1000) {
-    //     return res
-    //       .status(429)
-    //       .json({ message: "Please wait 30 seconds before requesting OTP" });
-    //   }
+    // FIXED: upsert instead of always creating new — prevents duplicate records
+    const existingOtp = await Otp.findOne({ where: { email } });
+    if (existingOtp) {
+      existingOtp.otp = otp;
+      existingOtp.expiresAt = expiresAt;
+      existingOtp.isVerified = false;
+      existingOtp.verificationToken = null;
+      await existingOtp.save();
+    } else {
+      await Otp.create({
+        email,
+        otp,
+        expiresAt,
+        isVerified: false,
+        verificationToken: null,
+      });
+    }
 
-    //   existingOtp.otp = otp;
-    //   existingOtp.expiresAt = expiresAt;
-    //   existingOtp.isVerified = false;
-    //   existingOtp.verificationToken = null;
-    //   await existingOtp.save();
-
-    //   return res.status(200).json({ message: "OTP sent successfully", otp });
-    // }
-
-    await Otp.create({
-      email,
-      otp,
-      expiresAt,
-      isVerified: false,
-      verificationToken: null,
-    });
     console.log("Generated OTP:", otp);
 
     const emailHtml = otpTemplate(otp);
-
     const sent = await sendEmail(email, "OTP Verification", emailHtml);
 
     if (!sent) {
@@ -64,6 +57,7 @@ const sendOtp = async (req, res) => {
   }
 };
 
+// ── RESEND OTP ────────────────────────────────────────────────────────────────
 const resendOtp = async (req, res) => {
   try {
     const { email } = req.body;
@@ -85,7 +79,7 @@ const resendOtp = async (req, res) => {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 3 * 60 * 1000);
 
     existingOtp.otp = otp;
     existingOtp.expiresAt = expiresAt;
@@ -94,7 +88,6 @@ const resendOtp = async (req, res) => {
     await existingOtp.save();
 
     const emailHtml = otpTemplate(otp);
-
     const sent = await sendEmail(email, "OTP Verification", emailHtml);
 
     if (!sent) {
@@ -110,6 +103,7 @@ const resendOtp = async (req, res) => {
   }
 };
 
+// ── VERIFY OTP ────────────────────────────────────────────────────────────────
 const verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -118,9 +112,10 @@ const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "Email and OTP are required" });
     }
 
+    // FIXED: order by createdAt DESC to always get the latest OTP
     const otpRecord = await Otp.findOne({
       where: { email },
-      order: [["updatedAt", "DESC"]],
+      order: [["createdAt", "DESC"]],
     });
 
     if (!otpRecord) {
@@ -132,7 +127,7 @@ const verifyOtp = async (req, res) => {
     }
 
     if (new Date() > otpRecord.expiresAt) {
-      return res.status(400).json({ message: "OTP expired" });
+      return res.status(400).json({ message: "OTP expired. Please request a new one." });
     }
 
     if (otpRecord.otp !== String(otp)) {
@@ -148,36 +143,37 @@ const verifyOtp = async (req, res) => {
     const emailHtml = verifiedTemplate();
     await sendEmail(email, "Email Verified", emailHtml);
 
-    return res
-      .status(200)
-      .json({ message: "OTP verified successfully", verificationToken });
+    return res.status(200).json({
+      message: "OTP verified successfully",
+      verificationToken,
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 };
 
+// ── REGISTER ──────────────────────────────────────────────────────────────────
 const registerUser = async (req, res) => {
   try {
-    const {
-      email,
-      password,
-      phoneNumber,
-      state,
-      districtName,
-      pinCode,
-      verificationToken,
-    } = req.body;
+    const { email, password, verificationToken } = req.body;
 
-    if (
-      !email ||
-      !password ||
-      !phoneNumber ||
-      !state ||
-      !districtName ||
-      !pinCode ||
-      !verificationToken
-    ) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (!email || !password || !verificationToken) {
+      return res.status(400).json({
+        message: "Email, password and verification token are required",
+      });
+    }
+
+    // Password validation
+    if (password.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters",
+      });
+    }
+
+    if (!/^[a-zA-Z0-9]+$/.test(password)) {
+      return res.status(400).json({
+        message: "Password can only contain letters and numbers",
+      });
     }
 
     const otpRecord = await Otp.findOne({
@@ -185,12 +181,12 @@ const registerUser = async (req, res) => {
     });
 
     if (!otpRecord) {
-      return res.status(400).json({ message: "Invalid verification" });
+      return res.status(400).json({ message: "Invalid or expired verification. Please verify OTP again." });
     }
 
     const tokenAge = Date.now() - new Date(otpRecord.updatedAt).getTime();
     if (tokenAge > 10 * 60 * 1000) {
-      return res.status(400).json({ message: "Verification token expired" });
+      return res.status(400).json({ message: "Verification token expired. Please verify OTP again." });
     }
 
     const existingUser = await User.findOne({ where: { email } });
@@ -202,16 +198,10 @@ const registerUser = async (req, res) => {
     const user = await User.create({
       email,
       password: hashedPassword,
-      phoneNumber,
-      state,
-      districtName,
-      pinCode,
     });
 
     const emailHtml = welcomeTemplate(user.email);
-await sendEmail(user.email, "Welcome to RedLink 🩸", emailHtml);
-
-
+    await sendEmail(user.email, "Welcome to RedLink 🩸", emailHtml);
 
     await otpRecord.destroy();
 
@@ -220,10 +210,6 @@ await sendEmail(user.email, "Welcome to RedLink 🩸", emailHtml);
       user: {
         id: user.id,
         email: user.email,
-        phoneNumber: user.phoneNumber,
-        state: user.state,
-        districtName: user.districtName,
-        pinCode: user.pinCode,
       },
     });
   } catch (error) {
@@ -231,14 +217,13 @@ await sendEmail(user.email, "Welcome to RedLink 🩸", emailHtml);
   }
 };
 
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email and password are required" });
+      return res.status(400).json({ message: "Email and password are required" });
     }
 
     const user = await User.findOne({ where: { email } });
@@ -279,6 +264,7 @@ const loginUser = async (req, res) => {
   }
 };
 
+// ── LOGOUT ────────────────────────────────────────────────────────────────────
 const logoutUser = (req, res) => {
   req.session.destroy((err) => {
     if (err) {
@@ -289,34 +275,29 @@ const logoutUser = (req, res) => {
   });
 };
 
+// ── GET CURRENT USER ──────────────────────────────────────────────────────────
 const getCurrentUser = async (req, res) => {
   try {
-    const user = await User.findByPk(req.session.user.id, {
-      attributes: [
-        "id",
-        "email",
-        "phoneNumber",
-        "state",
-        "districtName",
-        "pinCode",
-        "isOnboarded",
-        "role",
-      ],
+    const user = await User.findByPk(req.user.id, {
+      attributes: ["id", "email", "isOnboarded", "role"],
     });
 
     if (!user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    return responseHandler(
-      (res = res),
-      (status = 200),
-      (message = "User fetched successfully"),
-      (data = user),
-    );
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        isOnboarded: user.isOnboarded,
+      },
+    });
   } catch (error) {
     console.log("Error fetching current user:", error);
-    return responseHandler(res, 500, error.message, null, false);
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -328,4 +309,4 @@ module.exports = {
   loginUser,
   logoutUser,
   getCurrentUser,
-};
+}; 
