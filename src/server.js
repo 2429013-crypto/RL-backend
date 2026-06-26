@@ -82,7 +82,7 @@ const startServer = async () => {
     // Use default sync (without alter: true) to avoid MySQL index accumulation bug on nodemon restart.
     // If you need to alter the schema, use migrations or run sync({ alter: true }) once.
     await sequelize.sync();
-    // await sequelize.sync({ alter: true }); 
+    //await sequelize.sync({ alter: true }); 
     console.log("Tables synced successfully");
 
     await sessionStore.sync();
