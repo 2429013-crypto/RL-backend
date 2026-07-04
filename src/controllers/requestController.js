@@ -1,21 +1,25 @@
 const { Op } = require("sequelize");
-const Request = require("../models/request"); 
-const User = require("../models/User");
+const Request = require("../models/request");
+const sequelize = require("../config/db");
 const Profile = require("../models/profile");
-const RequestAcceptance = require("../models/RequestAcceptance"); //added 
-const ROLES = require("../constants/roles"); 
-const { bloodRequestTemplate } = require("../../templates/bloodRequestTemplate");
+const User = require("../models/User");
+const RequestAcceptance = require("../models/RequestAcceptance"); //added
+const ROLES = require("../constants/roles");
+const {
+  bloodRequestTemplate,
+} = require("../../templates/bloodRequestTemplate");
+const { acceptedTemplate } = require("../../templates/acceptedTemplate");
+const { fulfilledTemplate } = require("../../templates/fulfilledTemplate");
 const mailHandler = require("../../helper/mailHandler");
 
-
 const APP_URL = process.env.APP_URL || "http://localhost:5173";
-const MAX_DONORS = 10;                                                                                                             
-const createRequest = async (req, res) => {  
+const MAX_DONORS = 10;
+const createRequest = async (req, res) => {
   try {
     const {
       patientName,
       bloodGroup,
-      unitsNeeded, 
+      unitsNeeded,
       hospitalName,
       contactNumber,
       location,
@@ -24,11 +28,30 @@ const createRequest = async (req, res) => {
     } = req.body;
 
     // const userId = req.session.userId;
-    const userId = req.user.id;                               
+    const userId = req.user.id;
+
+    // Cooldown — prevent rapid-fire request spam
+    const recentRequest = await Request.findOne({
+      where: { userId },
+      order: [["createdAt", "DESC"]],
+    });
+
+    if (recentRequest) {
+      const timeSinceLastRequest =
+        Date.now() - new Date(recentRequest.createdAt).getTime();
+      if (timeSinceLastRequest < 5 * 60 * 1000) {
+        const secondsLeft = Math.ceil(
+          (5 * 60 * 1000 - timeSinceLastRequest) / 1000,
+        );
+        return res.status(429).json({
+          message: `Please wait ${secondsLeft} seconds before creating another request`,
+        });
+      }
+    }
 
     // Required Fields
     if (
-      !patientName || 
+      !patientName ||
       !bloodGroup ||
       !unitsNeeded ||
       !hospitalName ||
@@ -108,7 +131,6 @@ const createRequest = async (req, res) => {
       });
     }
 
-    
     // Save Request
     const request = await Request.create({
       patientName,
@@ -120,14 +142,16 @@ const createRequest = async (req, res) => {
       priority,
       requiredBy,
       userId,
-    }); 
-    console.log("[DEBUG] Request created, starting donor search for:", bloodGroup); // ADD 
+    });
+    console.log(
+      "[DEBUG] Request created, starting donor search for:",
+      bloodGroup,
+    );
 
-    // 🩸 Notify matching donors
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
-    Profile.findAll({
+    const matchingProfiles = await Profile.findAll({
       where: {
         bloodGroup,
         receiveAlerts: true,
@@ -139,59 +163,48 @@ const createRequest = async (req, res) => {
       include: [
         {
           model: User,
-          where: {
-            id: { [Op.ne]: userId },
-          },
+          where: { id: { [Op.ne]: userId } },
           attributes: ["id", "email"],
         },
       ],
       attributes: ["userId", "fullName", "bloodGroup"],
-    })
-      .then((profiles) => {
-          console.log("[DEBUG] profiles found:", profiles.length); // add 
-  console.log("[DEBUG] bloodGroup searched:", bloodGroup); // add
-  
-  if (profiles.length === 0) {
-    console.log("[RedLink] No matching donors found");
-    return;
-  }
-  console.log(`[RedLink] Sending email to ${profiles.length} donor(s)`);
-  profiles.forEach((p) => {
-    const html = bloodRequestTemplate({
-      donorName: p.fullName || "Donor",
-      bloodGroup,
-      patientName,
-      hospitalName,
-      location,
-      unitsNeeded,
-      requiredBy,
-      priority,
-      contactNumber,
-      requestId: request.id,
-      appUrl: APP_URL,
     });
-    mailHandler(
-      p.User.email,
-      `🩸 Urgent ${bloodGroup} Blood Needed — ${hospitalName}`,
-      html
-    );
-  });
-})
-.catch((err) => console.error("[RedLink] Donor alert email error:", err));
-        // Find matching donors for email (your friend uses this)
-    const matchingProfiles = await findMatchingDonors(bloodGroup);
-  return res.status(201).json({
+
+    console.log("[DEBUG] profiles found:", matchingProfiles.length);
+
+    matchingProfiles.forEach((p) => {
+      const html = bloodRequestTemplate({
+        donorName: p.fullName || "Donor",
+        bloodGroup,
+        patientName,
+        hospitalName,
+        location,
+        unitsNeeded,
+        requiredBy,
+        priority,
+        contactNumber,
+        requestId: request.id,
+        appUrl: APP_URL,
+      });
+      mailHandler(
+        p.User.email,
+        `🩸 Urgent ${bloodGroup} Blood Needed — ${hospitalName}`,
+        html,
+      ).catch((err) => console.error("[RedLink] Email send error:", err));
+    });
+
+    return res.status(201).json({
       success: true,
       message: "Blood request created successfully",
-      requestId: request.id,           
+      requestId: request.id,
       matchingDonorsCount: matchingProfiles.length,
-  });
+    });
   } catch (error) {
     return res.status(500).json({
       message: error.message,
     });
   }
-};                          
+};
 
 const getAllRequests = async (req, res) => {
   try {
@@ -220,7 +233,7 @@ const getAllRequests = async (req, res) => {
 
 const getMyRequests = async (req, res) => {
   try {
-    const userId = req.user.id;    
+    const userId = req.user.id;
 
     const requests = await Request.findAll({
       where: { userId },
@@ -248,19 +261,16 @@ const getMyRequests = async (req, res) => {
 
 const getRequestById = async (req, res) => {
   try {
-  // const { id } = req.params;
-  //const request = await Request.findByPk(id);              
-      const request = await Request.findByPk(req.params.id);
+    // const { id } = req.params;
+    //const request = await Request.findByPk(id);
+    const request = await Request.findByPk(req.params.id);
     if (!request) {
       return res.status(404).json({
         message: "Blood request not found",
       });
     }
     //protect part for the get request by id
-    if (
-      request.userId != req.user.id &&
-      req.user.role !== ROLES.ADMIN
-    ) {
+    if (request.userId != req.user.id && req.user.role !== ROLES.ADMIN) {
       return res.status(403).json({
         message: "Not authorized",
       });
@@ -288,28 +298,31 @@ const updateRequestStatus = async (req, res) => {
         message:
           "Invalid status value. Must be Active, Fulfilled, or Cancelled",
       });
-    }                      
+    }
     const request = await Request.findByPk(id);
 
     if (!request) {
       return res.status(404).json({
         message: "Blood request not found",
       });
-    } 
-    //protect updateRequestStatus 
-        // Owner or admin only      
-   if (
-      request.userId != req.user.id &&
-      req.user.role !== ROLES.ADMIN
-    ) {
+    }
+    //protect updateRequestStatus
+    // Owner or admin only
+    if (request.userId != req.user.id && req.user.role !== ROLES.ADMIN) {
       return res.status(403).json({
         message: "Not authorized",
       });
-    }          
-        // Only admin can reopen 
-            if (status === "Active" && request.status !== "Active" && req.user.role !== ROLES.ADMIN)
-      return res.status(403).json({ message: "Only admin can reopen a request" });
- if (request.status === status) {
+    }
+    // Only admin can reopen
+    if (
+      status === "Active" &&
+      request.status !== "Active" &&
+      req.user.role !== ROLES.ADMIN
+    )
+      return res
+        .status(403)
+        .json({ message: "Only admin can reopen a request" });
+    if (request.status === status) {
       return res.status(400).json({
         message: `Request is already ${status}`,
       });
@@ -317,6 +330,27 @@ const updateRequestStatus = async (req, res) => {
 
     request.status = status;
     await request.save();
+
+    if (status === "Fulfilled") {
+      try {
+        const requester = await User.findByPk(request.userId, {
+          attributes: ["email"],
+        });
+        const html = fulfilledTemplate({
+          patientName: request.patientName,
+          hospitalName: request.hospitalName,
+          bloodGroup: request.bloodGroup,
+          unitsNeeded: request.unitsNeeded,
+        });
+        await mailHandler(
+          requester.email,
+          `✅ Request Fulfilled — ${request.patientName}`,
+          html,
+        );
+      } catch (emailErr) {
+        console.error("[RedLink] Fulfilled email error:", emailErr);
+      }
+    }
 
     return res.status(200).json({
       success: true,
@@ -328,69 +362,136 @@ const updateRequestStatus = async (req, res) => {
       message: error.message,
     });
   }
-}; 
+};
 const acceptRequest = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
-    const request = await Request.findByPk(req.params.id);
-    if (!request)
+    const request = await Request.findByPk(req.params.id, {
+      lock: t.LOCK.UPDATE,
+      transaction: t,
+    });
+
+    if (!request) {
+      await t.rollback();
       return res.status(404).json({ message: "Blood request not found" });
+    }
 
-    // Cannot accept own request
-    if (request.userId == req.user.id)
-      return res.status(403).json({ message: "You cannot accept your own request" });
+    if (request.userId == req.user.id) {
+      await t.rollback();
+      return res
+        .status(403)
+        .json({ message: "You cannot accept your own request" });
+    }
 
-    // Must be Active or Accepted
-    if (request.status !== "Active" && request.status !== "Accepted")
-      return res.status(400).json({ message: "This request is no longer active" });
+    if (request.status !== "Active" && request.status !== "Accepted") {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ message: "This request is no longer active" });
+    }
 
-    // Fetch profile to get blood group
-    const Profile = require("../models/profile");
-    const userProfile = await Profile.findOne({ where: { userId: req.user.id } });
+    const userProfile = await Profile.findOne({
+      where: { userId: req.user.id },
+      include: [{ model: User, attributes: ["phoneNumber"] }],
+      transaction: t,
+    });
 
-    if (!userProfile)
-      return res.status(400).json({ message: "Please complete your profile first" });
+    if (!userProfile) {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ message: "Please complete your profile first" });
+    }
 
-    if (!userProfile.bloodGroup)
-      return res.status(400).json({ message: "Please add your blood group to your profile" });
+    if (!userProfile.bloodGroup) {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ message: "Please add your blood group to your profile" });
+    }
 
-    // Blood group must match
-    if (userProfile.bloodGroup !== request.bloodGroup)
+    if (userProfile.bloodGroup !== request.bloodGroup) {
+      await t.rollback();
       return res.status(403).json({
         message: `This request needs ${request.bloodGroup}. Your blood group is ${userProfile.bloodGroup}`,
       });
+    }
 
-    // Already accepted by this user
     const alreadyAccepted = await RequestAcceptance.findOne({
       where: { requestId: request.id, donorId: req.user.id },
+      transaction: t,
     });
-    if (alreadyAccepted)
-      return res.status(400).json({ message: "You have already accepted this request" });
 
-    // Max donors check
-    if (request.acceptanceCount >= MAX_DONORS)
-      return res.status(400).json({ message: `This request already has ${MAX_DONORS} donors` });
+    if (alreadyAccepted) {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ message: "You have already accepted this request" });
+    }
+
+    if (request.acceptanceCount >= MAX_DONORS) {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ message: `This request already has ${MAX_DONORS} donors` });
+    }
 
     const serialNumber = request.acceptanceCount + 1;
 
-    await RequestAcceptance.create({
-      requestId: request.id,
-      donorId: req.user.id,
-      serialNumber,
-    }); 
-  request.acceptanceCount = serialNumber;
+    await RequestAcceptance.create(
+      {
+        requestId: request.id,
+        donorId: req.user.id,
+        serialNumber,
+      },
+      { transaction: t },
+    );
+
+    request.acceptanceCount = serialNumber;
     if (request.status === "Active") request.status = "Accepted";
-    await request.save(); 
+    await request.save({ transaction: t });
+
+    await t.commit();
+    try {
+      const requester = await User.findByPk(request.userId, {
+        attributes: ["email"],
+      });
+      const requesterProfile = await Profile.findOne({
+        where: { userId: request.userId },
+        attributes: ["fullName"],
+      });
+      // 1. Fetch donor's phone from their profile
+      const html = acceptedTemplate({
+        requesterName: requesterProfile?.fullName || "Requester",
+        donorName: userProfile.fullName || "A donor",
+        donorBloodGroup: userProfile.bloodGroup,
+        donorPhone: userProfile.User?.phoneNumber || null,
+        patientName: request.patientName,
+        hospitalName: request.hospitalName,
+        contactNumber: request.contactNumber,
+        serialNumber,
+        totalDonors: serialNumber,
+        unitsNeeded: request.unitsNeeded,
+      });
+      await mailHandler(
+        requester.email,
+        `🩸 Donor #${serialNumber} accepted your request — ${request.patientName}`,
+        html,
+      );
+    } catch (emailErr) {
+      console.error("[RedLink] Accepted email error:", emailErr);
+    }
 
     return res.status(200).json({
       success: true,
       message: `You are donor #${serialNumber} for this request.`,
       serialNumber,
-      data: request,
-    }); 
+    });
   } catch (error) {
+    await t.rollback();
     return res.status(500).json({ message: error.message });
   }
-};  
+};
 const getAcceptedDonors = async (req, res) => {
   try {
     const request = await Request.findByPk(req.params.id);
@@ -409,10 +510,10 @@ const getAcceptedDonors = async (req, res) => {
         {
           model: User,
           as: "donor",
-        attributes: ["id", "email", "phoneNumber"], 
+          attributes: ["id", "phoneNumber"],
         },
-      ],                    
-    });                    
+      ],
+    });
 
     return res.status(200).json({
       success: true,
@@ -424,24 +525,7 @@ const getAcceptedDonors = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
-const findMatchingDonors = async (bloodGroup) => {
-  const Profile = require("../models/profile");
 
-  const matchingProfiles = await Profile.findAll({
-    where: {
-      bloodGroup,
-      receiveAlerts: true, // only users who opted in to alerts
-    },
-    include: [
-      {
-        model: User,
-        attributes: ["id", "email"],
-      }, 
-    ],
-  });
-
-  return matchingProfiles;
-};
 const cancelAcceptance = async (req, res) => {
   try {
     const request = await Request.findByPk(req.params.id);
@@ -453,7 +537,9 @@ const cancelAcceptance = async (req, res) => {
     });
 
     if (!acceptance) {
-      return res.status(400).json({ message: "You have not accepted this request" });
+      return res
+        .status(400)
+        .json({ message: "You have not accepted this request" });
     }
 
     await acceptance.destroy();
@@ -482,8 +568,7 @@ module.exports = {
   getMyRequests,
   getRequestById,
   updateRequestStatus,
-  acceptRequest,      // add
-  getAcceptedDonors,  //  add
-  findMatchingDonors, //  add
+  acceptRequest, // add
+  getAcceptedDonors, //  add
   cancelAcceptance,
-}; 
+};

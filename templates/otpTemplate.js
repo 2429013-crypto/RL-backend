@@ -1,8 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-
-//  build one digit box 
+//  build one digit box
 
 function createDigitBox(digit) {
   return `
@@ -23,15 +22,12 @@ function createDigitBox(digit) {
   `;
 }
 
-
 // build all digit boxes from the OTP
-
 
 function createAllDigitBoxes(otp) {
   const digits = otp.split("");
   return digits.map(createDigitBox).join("");
 }
-
 
 //  load the html template from file
 
