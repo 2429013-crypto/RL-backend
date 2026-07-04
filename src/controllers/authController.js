@@ -1,4 +1,4 @@
-const crypto = require("crypto");
+﻿const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const Otp = require("../models/otp");
 const User = require("../models/user");
