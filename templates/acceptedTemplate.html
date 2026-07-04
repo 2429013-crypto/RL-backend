@@ -1,0 +1,309 @@
+<!-- EMAIL WRAPPER -->
+<div
+  style="
+    font-family: Arial, sans-serif;
+    max-width: 640px;
+    margin: 0 auto;
+    background: #f3f4f6;
+    padding: 32px 16px;
+  "
+>
+  <!-- HEADER -->
+  <div
+    style="
+      background: #fef2f2;
+      padding: 28px 24px;
+      text-align: center;
+      border-radius: 12px 12px 0 0;
+    "
+  >
+    <div style="font-size: 26px; font-weight: 700; letter-spacing: 1px">
+      🩸 <span style="color: #dc2626">RED</span
+      ><span style="color: #111827">LINK</span>
+    </div>
+    <div
+      style="
+        color: #1f2937;
+        font-size: 12px;
+        margin-top: 4px;
+        letter-spacing: 2px;
+      "
+    >
+      BLOOD DONOR NETWORK
+    </div>
+  </div>
+
+  <!-- ACCENT BAR -->
+  <div style="background: red; height: 1px"></div>
+
+  <!-- BODY -->
+  <div
+  style="
+    background:#ffffff;
+    padding:36px 40px;
+    box-sizing:border-box;
+  "
+>
+    <!-- Title -->
+    <div
+      style="
+        font-size: 22px;
+        font-weight: 500;
+        color: #111827;
+        margin-bottom: 8px;
+      "
+    >
+      A Donor Has Accepted Your Request
+    </div>
+
+    <!-- Title underline -->
+    <div
+      style="
+        width: 40px;
+        height: 3px;
+        background: #dc2626;
+        border-radius: 2px;
+        margin-bottom: 20px;
+      "
+    ></div>
+
+    <!-- Greeting -->
+    <div
+      style="
+        color: #4b5563;
+        font-size: 14px;
+        line-height: 1.7;
+        margin-bottom: 24px;
+      "
+    >
+      Hello <strong>{{REQUESTER_NAME}}</strong>, great news! A donor has stepped
+      forward for your blood request. Here are the details below.
+    </div>
+
+    <!-- DONOR INFO BOX -->
+    <div
+style="
+background:#fef2f2;
+border-left:4px solid #dc2626;
+border-radius:8px;
+padding:24px;
+margin:0 0 24px 0;
+width:100%;
+box-sizing:border-box;
+"
+>
+      <div
+        style="
+          font-size: 12px;
+          color: #9ca3af;
+          letter-spacing: 2px;
+          margin-bottom: 16px;
+        "
+      >
+        DONOR INFORMATION
+      </div>
+
+      <!-- Donor Name -->
+      <table
+        width="100%"
+        cellpadding="0"
+        cellspacing="0"
+        style="margin-bottom: 12px"
+      >
+        <tr>
+          <td style="font-size: 13px; color: #6b7280; width: 150px">
+            Donor Name
+          </td>
+          <td style="font-size: 14px; font-weight: 700; color: #111827">
+            {{DONOR_NAME}}
+          </td>
+        </tr>
+      </table>
+
+      <!-- Blood Group -->
+      <table
+        width="100%"
+        cellpadding="0"
+        cellspacing="0"
+        style="margin-bottom: 12px"
+      >
+        <tr>
+          <td style="font-size: 13px; color: #6b7280; width: 150px">
+            Blood Group
+          </td>
+          <td>
+            <span
+              style="
+                background: #dc2626;
+                color: white;
+                font-size: 13px;
+                font-weight: 700;
+                padding: 3px 12px;
+                border-radius: 20px;
+              "
+            >
+              {{DONOR_BLOOD_GROUP}}
+            </span>
+          </td>
+        </tr>
+      </table>
+      
+      <!-- Donor Phone -->
+<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 12px;">
+  <tr>
+    <td style="font-size: 13px; color: #6b7280; width: 150px;">Donor Phone</td>
+    <td style="font-size: 14px; font-weight: 700; color: #111827;">{{DONOR_PHONE}}</td>
+  </tr>
+</table>
+      <!-- Serial Number -->
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="font-size: 13px; color: #6b7280; width: 150px">
+            Donor Serial
+          </td>
+          <td style="font-size: 14px; font-weight: 700; color: #111827">
+            #{{SERIAL_NUMBER}} of {{UNITS_NEEDED}} needed
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    
+    <!-- END DONOR INFO BOX -->
+
+    <!-- REQUEST INFO BOX -->
+    <div
+style="
+background:#f9fafb;
+border:1px solid #e5e7eb;
+border-radius:8px;
+padding:20px 24px;
+margin:0 0 24px 0;
+width:100%;
+box-sizing:border-box;
+"
+>
+      <div
+        style="
+          font-size: 12px;
+          color: #9ca3af;
+          letter-spacing: 2px;
+          margin-bottom: 16px;
+        "
+      >
+        REQUEST DETAILS
+      </div>
+
+      <!-- Patient -->
+      <table
+        width="100%"
+        cellpadding="0"
+        cellspacing="0"
+        style="margin-bottom: 10px"
+      >
+        <tr>
+          <td style="font-size: 13px; color: #6b7280; width: 150px">Patient</td>
+          <td style="font-size: 14px; color: #111827; font-weight: 600">
+            {{PATIENT_NAME}}
+          </td>
+        </tr>
+      </table>
+
+      <!-- Hospital -->
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="font-size:13px;color:#6b7280;width:150px;">
+      Hospital
+    </td>
+    <td style="font-size:14px;color:#111827;font-weight:600;">
+      {{HOSPITAL_NAME}}
+    </td>
+  </tr>
+</table>
+
+<!-- Your Contact -->
+<table
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="margin-top:14px;"
+>
+  <tr>
+    <td style="font-size:13px;color:#6b7280;width:150px;">
+      Your Contact
+    </td>
+    <td style="font-size:14px;color:#111827;font-weight:600;">
+      {{CONTACT_NUMBER}}
+    </td>
+  </tr>
+</table>
+
+</div>
+    <!-- END REQUEST INFO BOX -->
+
+    <!-- PROGRESS BAR -->
+    {{PROGRESS_BAR}}
+    <!-- END PROGRESS BAR -->
+
+    <!-- NOTE -->
+    <div
+      style="
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 24px;
+      "
+    >
+      <div style="font-size: 13px; color: #9a3412; line-height: 1.6">
+        📱 The donor will reach out to you directly. Please keep your contact
+        number available.
+      </div>
+    </div>
+
+    <!-- SECURITY NOTE -->
+<div
+  style="
+    background:#f9fafb;
+    border-radius:8px;
+    padding:16px 20px;
+    width:100%;
+    box-sizing:border-box;
+  "
+>
+  <div style="font-size:12px;color:#6b7280;line-height:1.6;">
+    🔒 If you did not create this request on REDLINK, please contact our
+    support immediately.
+  </div>
+</div>
+  <!-- END BODY -->
+
+  <!-- FOOTER -->
+  <div
+    style="
+      background: #dc2626;
+      padding: 20px 24px;
+      text-align: center;
+      border-radius: 0 0 12px 12px;
+    "
+  >
+    <div
+      style="
+        font-size: 14px;
+        font-weight: 500;
+        color: white;
+        margin-bottom: 4px;
+      "
+    >
+      REDLINK — Blood Donor Network
+    </div>
+    <div style="font-size: 11px; color: white; margin-bottom: 8px">
+      Connecting donors with those in need
+    </div>
+    <div style="font-size: 11px; color: white; margin-top: 8px">
+      © {{YEAR}} REDLINK. This is an automated email — please do not reply.
+    </div>
+  </div>
+  <!-- END FOOTER -->
+</div>
+<!-- END EMAIL WRAPPER -->
