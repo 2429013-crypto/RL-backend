@@ -60,8 +60,6 @@ router.post(
         volunteerParticipation,
       } = req.body;
 
-      
-
       // Get userId from session
       const userId = req.session.user.id;
 
@@ -133,7 +131,8 @@ router.get(
   authorizeRole(ROLES.USER, ROLES.ADMIN),
   async (req, res) => {
     try {
-      const targetUserId = req.params.userId === "me" ? req.session.user.id : req.params.userId;
+      const targetUserId =
+        req.params.userId === "me" ? req.session.user.id : req.params.userId;
       if (
         req.session.user.id != targetUserId &&
         req.session.user.role !== ROLES.ADMIN
@@ -180,7 +179,8 @@ router.put(
   upload.single("profilePhoto"),
   async (req, res) => {
     try {
-      const targetUserId = req.params.userId === "me" ? req.session.user.id : req.params.userId;
+      const targetUserId =
+        req.params.userId === "me" ? req.session.user.id : req.params.userId;
       if (req.session.user.id != targetUserId) {
         return res.status(403).json({
           message: "Not authorized",
@@ -212,8 +212,10 @@ router.put(
       if (req.body.phoneNumber || req.body.districtName) {
         const user = await User.findByPk(targetUserId);
         if (user) {
-          if (req.body.phoneNumber !== undefined) user.phoneNumber = req.body.phoneNumber;
-          if (req.body.districtName !== undefined) user.districtName = req.body.districtName;
+          if (req.body.phoneNumber !== undefined)
+            user.phoneNumber = req.body.phoneNumber;
+          if (req.body.districtName !== undefined)
+            user.districtName = req.body.districtName;
           await user.save();
         }
       }
@@ -254,7 +256,8 @@ router.delete(
 
   async (req, res) => {
     try {
-      const targetUserId = req.params.userId === "me" ? req.session.user.id : req.params.userId;
+      const targetUserId =
+        req.params.userId === "me" ? req.session.user.id : req.params.userId;
       if (
         req.session.user.id != targetUserId &&
         req.session.user.role !== ROLES.ADMIN

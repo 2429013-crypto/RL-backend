@@ -1,0 +1,93 @@
+<!-- EMAIL WRAPPER -->
+<div style="
+  font-family: Arial, sans-serif;
+  max-width: 540px;
+  margin: 0 auto;
+  background: #f3f4f6;
+  padding: 32px 16px;
+">
+
+  <!-- HEADER -->
+  <div style="
+    background: #fef2f2;
+    padding: 28px 24px;
+    text-align: center;
+    border-radius: 12px 12px 0 0;
+  ">
+    <div style="font-size: 26px; font-weight: 700; letter-spacing: 1px;">
+      🩸 <span style="color: #dc2626;">RED</span><span style="color: #111827;">LINK</span>
+    </div>
+    <div style="color: #1f2937; font-size: 12px; margin-top: 4px; letter-spacing: 2px;">
+      BLOOD DONOR NETWORK
+    </div>
+  </div>
+
+  <!-- ACCENT BAR -->
+  <div style="background: #16a34a; height: 4px;"></div>
+
+  <!-- BODY -->
+  <div style="background: white; padding: 36px 32px;">
+
+    <div style="font-size: 22px; font-weight: 500; color: #111827; margin-bottom: 8px;">
+      ✅ Request Fulfilled
+    </div>
+    <div style="width: 40px; height: 3px; background: #16a34a; border-radius: 2px; margin-bottom: 20px;"></div>
+
+    <div style="color: #4b5563; font-size: 14px; line-height: 1.7; margin-bottom: 24px;">
+      Great news — your blood request for <strong>{{PATIENT_NAME}}</strong> at
+      <strong>{{HOSPITAL_NAME}}</strong> has been marked as
+      <strong style="color: #16a34a;">Fulfilled</strong>.
+      Thank you to every donor who stepped forward to help.
+    </div>
+
+    <!-- SUMMARY BOX -->
+    <div style="
+      background: #f0fdf4;
+      border-left: 4px solid #16a34a;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 24px;
+    ">
+      <div style="font-size: 12px; color: #6b7280; letter-spacing: 2px; margin-bottom: 16px;">
+        REQUEST SUMMARY
+      </div>
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr>
+          <td style="padding: 6px 0; font-size: 13px; color: #6b7280; width: 45%;">Blood Group</td>
+          <td style="padding: 6px 0; font-size: 13px; color: #111827; font-weight: 700;">{{BLOOD_GROUP}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; font-size: 13px; color: #6b7280;">Units Donated</td>
+          <td style="padding: 6px 0; font-size: 13px; color: #111827; font-weight: 600;">{{UNITS_NEEDED}} unit(s)</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; font-size: 13px; color: #6b7280;">Hospital</td>
+          <td style="padding: 6px 0; font-size: 13px; color: #111827; font-weight: 600;">{{HOSPITAL_NAME}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- NOTE -->
+    <div style="background: #f9fafb; border-radius: 8px; padding: 12px 16px;">
+      <div style="font-size: 12px; color: #6b7280; line-height: 1.6;">
+        🙏 On behalf of the patient and family, thank you for using REDLINK
+        and for the donors who responded in this time of need.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background: #16a34a; padding: 20px 24px; text-align: center; border-radius: 0 0 12px 12px;">
+    <div style="font-size: 14px; font-weight: 500; color: white; margin-bottom: 4px;">
+      REDLINK — Blood Donor Network
+    </div>
+    <div style="font-size: 11px; color: white; margin-bottom: 8px;">
+      Connecting donors with those in need
+    </div>
+    <div style="font-size: 11px; color: white; margin-top: 8px;">
+      © {{YEAR}} REDLINK. This is an automated email — please do not reply.
+    </div>
+  </div>
+
+</div>
